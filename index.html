@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análise de CV by XptoAY - Privacidade Máxima</title>
+    <title>Análise de CV by XptoAY - Exportação Local</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
@@ -36,19 +36,30 @@
                 </h1>
                 <img src="Logo XptoAY.png" alt="Logo XptoAY" class="h-12 md:h-14 w-auto object-contain">
             </div>
-            <div class="flex items-center gap-1.5 justify-center bg-blue-50 text-blue-700 px-3 py-0.5 rounded-full text-[10px] font-bold border border-blue-100 uppercase tracking-wide">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                Privacidade Reforçada v8.4 
+            <div class="flex items-center gap-1.5 justify-center bg-green-50 text-green-700 px-3 py-0.5 rounded-full text-[10px] font-bold border border-green-100 uppercase tracking-wide">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Modo Local & Exportação CSV v9.0
             </div>
         </header>
 
+        <!-- Ranking Local com Botão de Download -->
         <section id="ranking-section" class="hidden mb-3 animate-fade-in">
             <div class="bg-white rounded-xl shadow-sm border border-green-100 p-3">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Candidatos Analisados nesta Sessão</h2>
+                    <div class="flex gap-2">
+                        <button id="download-csv-btn" class="bg-green-100 text-green-700 px-2 py-1 rounded text-[9px] font-bold uppercase hover:bg-green-200 transition-colors flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Baixar Planilha
+                        </button>
+                        <button id="clear-local-btn" class="text-[9px] text-red-400 hover:text-red-600 font-bold uppercase">Limpar Tudo</button>
+                    </div>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
                         <thead>
                             <tr class="text-[9px] uppercase text-gray-400 border-b">
-                                <th class="pb-1 font-semibold">Arquivo Original</th>
+                                <th class="pb-1 font-semibold">Arquivo</th>
                                 <th class="pb-1 font-semibold text-center">Score</th>
                                 <th class="pb-1 font-semibold text-right">Ação</th>
                             </tr>
@@ -61,34 +72,32 @@
 
         <main class="bg-white rounded-xl shadow-lg p-4 md:p-5 border border-green-100 flex-grow mb-4">
             
-            <!-- Configuração da API -->
             <section class="mb-5 p-3 bg-blue-50 rounded-lg border border-dashed border-blue-200">
-                <label class="block text-[10px] font-bold text-blue-800 uppercase mb-1">Configuração da API Gemini</label>
+                <label class="block text-[10px] font-bold text-blue-800 uppercase mb-1">Configuração da IA</label>
                 <div class="flex gap-2">
-                    <input type="password" id="api-key-input" class="flex-1 p-2 border border-blue-200 rounded text-xs outline-none" placeholder="Cole sua API Key...">
-                    <button id="save-key-btn" class="bg-blue-900 text-white px-4 py-1 rounded text-[10px] font-bold uppercase hover:bg-blue-800 transition-all">Salvar</button>
+                    <input type="password" id="api-key-input" class="flex-1 p-2 border border-blue-200 rounded text-xs outline-none" placeholder="Cole sua API Key do Gemini...">
+                    <button id="save-key-btn" class="bg-blue-900 text-white px-4 py-1 rounded text-[10px] font-bold uppercase hover:bg-blue-800">Salvar</button>
                 </div>
-                <p class="mt-2 text-[10px] text-blue-600 flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                    Caso não tenha uma chave, 
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="underline font-bold hover:text-blue-800">obtenha sua API Key gratuita aqui.</a>
+                <p class="mt-2 text-[10px] text-blue-600">
+                    Chave necessária para análise. 
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="underline font-bold">Obter chave gratuita aqui.</a>
                 </p>
             </section>
 
             <section id="input-section" class="space-y-3">
                 <div>
                     <label class="block text-[11px] font-semibold text-gray-700 mb-1">Requisitos da Vaga</label>
-                    <textarea id="job-description" rows="2" class="w-full p-2 border border-gray-200 rounded-lg bg-gray-50 text-xs" placeholder="Cole os requisitos aqui..."></textarea>
+                    <textarea id="job-description" rows="2" class="w-full p-2 border border-gray-200 rounded-lg bg-gray-50 text-xs" placeholder="Cole aqui o que a vaga busca..."></textarea>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
                     <div class="space-y-1">
-                        <label class="block text-[11px] font-semibold text-gray-700">Currículo (PDF)</label>
+                        <label class="block text-[11px] font-semibold text-gray-700">Arquivo do Currículo</label>
                         <div class="flex items-center gap-2">
                             <input type="file" id="cv-file" accept="application/pdf" class="hidden">
                             <button id="import-btn" class="bg-red-600 hover:bg-red-700 text-white font-medium py-1.5 px-3 rounded-lg flex items-center gap-2 text-xs transition-all">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                                <span id="import-btn-text">Carregar PDF</span>
+                                <span id="import-btn-text">Selecionar PDF</span>
                             </button>
                             <div id="file-loader" class="hidden items-center gap-1.5 text-[10px] text-blue-600 font-medium">
                                 <div class="spinner !border-blue-600 !border-t-transparent !w-3 !h-3"></div>
@@ -98,22 +107,22 @@
                     </div>
                     
                     <button id="analyze-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg shadow-md transition-all flex items-center justify-center gap-2 text-xs">
-                        <span id="analyze-text">Analisar Competências ✨</span>
+                        <span id="analyze-text">Analisar Candidato ✨</span>
                         <div id="analyze-spinner" class="spinner hidden"></div>
                     </button>
                 </div>
 
-                <div id="cv-content-area" class="space-y-1">
-                    <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider text-right">Texto Anonimizado (Auditável)</label>
-                    <textarea id="cv-text" rows="4" class="w-full p-2 border border-gray-100 rounded-lg outline-none text-[10px] bg-gray-50 text-gray-600" readonly></textarea>
+                <div class="space-y-1">
+                    <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider text-right">Preview Anonimizado</label>
+                    <textarea id="cv-text" rows="3" class="w-full p-2 border border-gray-100 rounded-lg outline-none text-[10px] bg-gray-50 text-gray-600" readonly></textarea>
                 </div>
             </section>
 
             <section id="result-section" class="hidden mt-4 space-y-3 animate-fade-in border-t pt-4">
                 <div class="flex items-center justify-between gap-2">
                     <div class="flex-1">
-                        <h2 class="text-base font-bold text-gray-800">Resultado da Análise</h2>
-                        <span id="current-candidate-name" class="text-[9px] font-semibold text-gray-400 uppercase block">Candidato</span>
+                        <h2 class="text-base font-bold text-gray-800">Resultado Atual</h2>
+                        <span id="current-candidate-name" class="text-[9px] font-semibold text-gray-400 uppercase block">Nome do Arquivo</span>
                     </div>
                     <div class="text-right">
                         <span id="compatibility-percent" class="text-2xl font-black text-gray-800">0%</span>
@@ -144,7 +153,7 @@
 
                 <div class="flex justify-center">
                     <button id="next-candidate-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-1.5 rounded-lg font-bold text-xs">
-                        Próximo Candidato
+                        Analisar Outro
                     </button>
                 </div>
             </section>
@@ -152,7 +161,7 @@
 
         <footer class="text-center pb-4 pt-2">
             <p class="text-[10px] text-gray-400 font-medium tracking-widest">
-                &copy; 2026 Todos os direitos resevados - <span class="text-blue-900 font-bold">XptoAY</span>
+                &copy; 2026 Todos os direitos reservados - <span class="text-blue-900 font-bold">XptoAY</span> | Processamento 100% Local
             </p>
         </footer>
     </div>
@@ -161,7 +170,8 @@
         const modelName = "gemini-2.5-flash-preview-09-2025"; 
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-        let history = [];
+        // Histórico em memória e LocalStorage
+        let candidatesHistory = JSON.parse(localStorage.getItem('cv_history_local')) || [];
         let currentFilename = "";
         let apiKey = localStorage.getItem('gemini_api_key') || "";
 
@@ -180,6 +190,8 @@
             resultSection: document.getElementById('result-section'),
             rankingSection: document.getElementById('ranking-section'),
             rankingBody: document.getElementById('ranking-body'),
+            downloadCsvBtn: document.getElementById('download-csv-btn'),
+            clearLocalBtn: document.getElementById('clear-local-btn'),
             compatibilityPercent: document.getElementById('compatibility-percent'),
             compatibilityBar: document.getElementById('compatibility-bar'),
             currentCandidateName: document.getElementById('current-candidate-name'),
@@ -192,24 +204,66 @@
         };
 
         if (apiKey) els.keyInput.value = apiKey;
+        renderRanking();
 
+        // --- SALVAR CHAVE ---
         els.saveKeyBtn.addEventListener('click', () => {
             const val = els.keyInput.value.trim();
             if (val) {
                 localStorage.setItem('gemini_api_key', val);
                 apiKey = val;
-                showToast("Chave salva com sucesso!");
+                showToast("Configuração salva!");
             }
+        });
+
+        // --- LIMPAR HISTÓRICO ---
+        els.clearLocalBtn.addEventListener('click', () => {
+            if (confirm("Deseja limpar todos os dados desta sessão?")) {
+                candidatesHistory = [];
+                localStorage.removeItem('cv_history_local');
+                renderRanking();
+                els.resultSection.classList.add('hidden');
+                showToast("Histórico limpo.");
+            }
+        });
+
+        // --- EXPORTAR CSV ---
+        els.downloadCsvBtn.addEventListener('click', () => {
+            if (candidatesHistory.length === 0) return;
+            
+            // Cabeçalho
+            let csvContent = "\uFEFF"; // BOM para Excel abrir acentos corretamente
+            csvContent += "Candidato;Score;Pontos Fortes;Gaps;Sugestões;Resumo\n";
+            
+            candidatesHistory.forEach(item => {
+                const strengths = item.details.strengths.join(" | ");
+                const gaps = item.details.gaps.join(" | ");
+                const tips = item.details.tips.join(" | ");
+                const summary = item.details.summary.replace(/(\r\n|\n|\r|;)/gm, " ");
+                
+                csvContent += `"${item.name}";"${item.score}%";"${strengths}";"${gaps}";"${tips}";"${summary}"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Ranking_CVs_${new Date().toLocaleDateString().replace(/\//g, '-')}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         });
 
         function showToast(message, type = 'info') {
             const toast = document.createElement('div');
-            toast.className = `${type === 'error' ? 'bg-red-600' : 'bg-green-600'} text-white px-4 py-2 rounded-lg shadow-lg text-[11px] mb-2 animate-fade-in`;
-            toast.innerHTML = message;
+            toast.className = `${type === 'error' ? 'bg-red-600' : 'bg-blue-600'} text-white px-4 py-2 rounded-lg shadow-lg text-[11px] mb-2 animate-fade-in`;
+            toast.innerText = message;
             els.toastContainer.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
         }
 
+        // --- ANONIMIZAÇÃO ---
         function sanitizeText(text, filename) {
             if (!text) return "";
             let clean = text.replace(/[\u00AD\u200B\u200C\u200D\uFEFF]/g, '');
@@ -218,25 +272,9 @@
                 const dynamicRegex = new RegExp(`\\b${token}\\b`, 'gi');
                 clean = clean.replace(dynamicRegex, "[NOME OCULTADO]");
             });
-            const spatialPhoneRegex = /(?:\+?\s*5\s*5)?\s*\(?\s*\d\s*\d\s*\)?\s*\d?\s*\d\s*\d\s*\d\s*[\s.-]?\s*\d\s*\d\s*\d\s*\d/g;
-            clean = clean.replace(spatialPhoneRegex, "[TELEFONE OCULTADO]");
-            const spatialEmailRegex = /[a-zA-Z0-9._%+-]+\s*@\s*[a-zA-Z0-9.-]+\s*\.\s*[a-zA-Z]{2,}/gi;
-            clean = clean.replace(spatialEmailRegex, "[E-MAIL OCULTADO]");
-            clean = clean.replace(/(?:Rua|Avenida|Av\.|Alameda|Travessa|Praça|CEP|Morada|Localização)\s*:?\s*[^,.\n]+/gi, "[ENDEREÇO OCULTADO]");
-            clean = clean.replace(/\d\s*\d\s*\d\s*\.\s*\d\s*\d\s*\d\s*\.\s*\d\s*\d\s*\d\s*-\s*\d\s*\d/g, "[CPF OCULTADO]");
-            clean = clean.replace(/(?:linkedin\.com\/in\/|github\.com\/)[a-zA-Z0-9-._%]+/gi, "[SOCIAL OCULTADO]");
-            clean = clean.replace(/\b(?:\d\s*){8,12}\b/g, "[NÚMERO OCULTADO]");
-            let lines = clean.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            const sectionKeywords = /objetivo|experiência|formação|educação|habilidades|competências|contato|resumo|perfil/i;
-            let hCount = 0;
-            for(let i=0; i < Math.min(lines.length, 8); i++) {
-                if (!sectionKeywords.test(lines[i]) && lines[i].split(/\s+/).length < 5) {
-                    lines[i] = "[DADO PESSOAL OCULTADA]";
-                    hCount++;
-                    if (hCount >= 3) break;
-                }
-            }
-            return lines.join('\n').replace(/\s{2,}/g, ' ');
+            clean = clean.replace(/(?:\+?\s*5\s*5)?\s*\(?\s*\d\s*\d\s*\)?\s*\d?\s*\d\s*\d\s*\d\s*[\s.-]?\s*\d\s*\d\s*\d\s*\d/g, "[TELEFONE OCULTADO]");
+            clean = clean.replace(/[a-zA-Z0-9._%+-]+\s*@\s*[a-zA-Z0-9.-]+\s*\.\s*[a-zA-Z]{2,}/gi, "[E-MAIL OCULTADO]");
+            return clean.replace(/\s{2,}/g, ' ').trim();
         }
 
         async function extractTextFromPDF(data, filename) {
@@ -258,41 +296,44 @@
             if (!file) return;
             currentFilename = file.name;
             els.fileLoader.classList.remove('hidden');
-            els.importBtn.disabled = true;
             try {
                 const reader = new FileReader();
                 reader.onload = async function() {
                     const typedarray = new Uint8Array(this.result);
                     const cleanText = await extractTextFromPDF(typedarray, currentFilename);
                     els.cvText.value = cleanText;
-                    els.importBtnText.innerText = "PDF Pronto";
-                    showToast('CV anonimizado com sucesso.');
+                    els.importBtnText.innerText = "PDF Carregado";
                 };
                 reader.readAsArrayBuffer(file);
             } catch (err) {
-                showToast('Erro ao ler PDF.', 'error');
+                showToast('Erro no PDF.', 'error');
             } finally {
                 els.fileLoader.classList.add('hidden');
-                els.importBtn.disabled = false;
             }
         });
 
         async function analyzeCV() {
             const job = els.jobDescription.value.trim();
             const cv = els.cvText.value.trim();
-            if (!apiKey) { showToast("Chave ausente!", "error"); return; }
-            if (!job || !cv) { showToast('Dados incompletos.', "error"); return; }
+            if (!apiKey) { showToast("Insira a API Key!", "error"); return; }
+            if (!job || !cv) { showToast('Faltam dados.', "error"); return; }
+            
             setLoading(true);
-            const system = `Aja como um Recrutador Especialista. Analise o CV vs Vaga. JSON: { "score": 0, "strengths": [], "gaps": [], "tips": [], "summary": "" }.`;
+            const system = `Recrutador Especialista. Analise CV vs Vaga. JSON: { "score": 0, "strengths": [], "gaps": [], "tips": [], "summary": "" }.`;
             const prompt = `VAGA:\n${job}\n\nCV:\n${cv}`;
+            
             try {
                 const res = await callGemini(system, prompt);
-                const result = { name: currentFilename, score: res.score, details: res, id: Date.now() };
-                history.push(result);
+                const result = { id: Date.now(), name: currentFilename, score: res.score, details: res };
+                
+                // Adicionar ao histórico local
+                candidatesHistory.push(result);
+                localStorage.setItem('cv_history_local', JSON.stringify(candidatesHistory));
+                
                 renderRanking();
                 renderResult(result);
             } catch (err) {
-                showToast('Erro na API.', 'error');
+                showToast('Erro na análise.', 'error');
             } finally {
                 setLoading(false);
             }
@@ -326,26 +367,30 @@
 
         function setLoading(isLoading) {
             els.analyzeBtn.disabled = isLoading;
-            els.analyzeText.innerText = isLoading ? 'IA Trabalhando...' : 'Analisar Competências ✨';
+            els.analyzeText.innerText = isLoading ? 'Analisando...' : 'Analisar Candidato ✨';
             els.analyzeSpinner.classList.toggle('hidden', !isLoading);
         }
 
         function renderRanking() {
-            els.rankingSection.classList.remove('hidden');
-            const sorted = [...history].sort((a, b) => b.score - a.score);
-            els.rankingBody.innerHTML = sorted.map((item) => `
-                <tr class="border-b hover:bg-gray-50">
-                    <td class="py-2 font-medium text-gray-700">${item.name}</td>
-                    <td class="py-2 text-center font-bold text-green-600">${item.score}%</td>
-                    <td class="py-2 text-right">
-                        <button onclick="viewById(${item.id})" class="text-blue-600 font-bold">VER</button>
-                    </td>
-                </tr>
-            `).join('');
+            if (candidatesHistory.length > 0) {
+                els.rankingSection.classList.remove('hidden');
+                const sorted = [...candidatesHistory].sort((a, b) => b.score - a.score);
+                els.rankingBody.innerHTML = sorted.map((item) => `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="py-2 font-medium text-gray-700 truncate max-w-[150px]">${item.name}</td>
+                        <td class="py-2 text-center font-bold text-green-600">${item.score}%</td>
+                        <td class="py-2 text-right">
+                            <button onclick="viewLocalById(${item.id})" class="text-blue-600 font-bold hover:underline">VER</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                els.rankingSection.classList.add('hidden');
+            }
         }
 
-        window.viewById = (id) => {
-            const item = history.find(h => h.id === id);
+        window.viewLocalById = (id) => {
+            const item = candidatesHistory.find(h => h.id === id);
             if (item) renderResult(item);
         };
 
@@ -354,7 +399,7 @@
             els.compatibilityPercent.innerText = `${item.score}%`;
             els.compatibilityBar.style.width = `${item.score}%`;
             els.compatibilityBar.className = `h-full transition-all duration-1000 ${item.score > 70 ? 'bg-green-500' : (item.score > 40 ? 'bg-orange-500' : 'bg-red-500')}`;
-            const fill = (el, arr) => el.innerHTML = (arr && arr.length) ? arr.map(t => `<li>${t}</li>`).join('') : '<li>Não informado</li>';
+            const fill = (el, arr) => el.innerHTML = (arr && arr.length) ? arr.map(t => `<li>${t}</li>`).join('') : '<li>-</li>';
             fill(els.listStrengths, item.details.strengths);
             fill(els.listImprovements, item.details.gaps);
             fill(els.listSuggestions, item.details.tips);
@@ -366,7 +411,7 @@
         els.nextCandidateBtn.addEventListener('click', () => {
             els.cvFile.value = '';
             els.cvText.value = '';
-            els.importBtnText.innerText = "Carregar PDF";
+            els.importBtnText.innerText = "Selecionar PDF";
             els.resultSection.classList.add('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
