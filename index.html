@@ -81,7 +81,7 @@
             <section class="mb-5 p-3 bg-blue-50 rounded-lg border border-dashed border-blue-200">
                 <label class="block text-[10px] font-bold text-blue-800 uppercase mb-1">Status da API</label>
                 <div class="flex gap-2">
-                    <input type="password" id="api-key-input" class="flex-1 p-2 border border-blue-200 rounded text-xs outline-none focus:ring-1 focus:ring-blue-400" placeholder="A chave é gerenciada automaticamente...">
+                    <input type="password" id="api-key-input" class="flex-1 p-2 border border-blue-200 rounded text-xs outline-none focus:ring-1 focus:ring-blue-400" placeholder="Insira sua Gemini API Key aqui...">
                     <button id="save-key-btn" class="bg-blue-900 text-white px-4 py-1 rounded text-[10px] font-bold uppercase hover:bg-blue-800 transition-colors">Salvar</button>
                 </div>
             </section>
@@ -163,7 +163,7 @@
 
         <footer class="text-center pb-4 pt-2">
             <p class="text-[10px] text-gray-400 font-medium">
-                &copy; 2026 Todos os direitos Reservados - <span class="text-blue-900 font-bold">XptoAY</span> | Inteligência Artificial Local
+                &copy; 2024 - <span class="text-blue-900 font-bold">XptoAY</span> | Inteligência Artificial Local
             </p>
         </footer>
     </div>
@@ -174,7 +174,9 @@
 
         let candidatesHistory = JSON.parse(localStorage.getItem('cv_history_local')) || [];
         let currentFilename = "";
-        const apiKey = ""; 
+        
+        // Carrega a chave salva anteriormente, se existir
+        let savedApiKey = localStorage.getItem('gemini_api_key') || "";
 
         const els = {
             keyInput: document.getElementById('api-key-input'),
@@ -204,6 +206,11 @@
             toastContainer: document.getElementById('toast-container')
         };
 
+        // Preenche o input se já tiver chave
+        if (savedApiKey) {
+            els.keyInput.value = savedApiKey;
+        }
+
         renderRanking();
 
         function showToast(message, type = 'info') {
@@ -213,6 +220,18 @@
             els.toastContainer.appendChild(toast);
             setTimeout(() => toast.remove(), 4000);
         }
+
+        // Lógica de salvar a chave no LocalStorage
+        els.saveKeyBtn.addEventListener('click', () => {
+            const newKey = els.keyInput.value.trim();
+            if (newKey) {
+                localStorage.setItem('gemini_api_key', newKey);
+                savedApiKey = newKey;
+                showToast("Chave de API salva com sucesso!");
+            } else {
+                showToast("Por favor, insira uma chave válida.", "error");
+            }
+        });
 
         function sanitizeText(text, filename) {
             if (!text) return "";
@@ -251,7 +270,12 @@
         }
 
         async function callGemini(sysPrompt, userQuery) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`;
+            // Verifica se a chave existe antes de chamar
+            if (!savedApiKey) {
+                throw new Error("API Key não encontrada. Insira e salve a chave no campo acima.");
+            }
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${savedApiKey}`;
             
             const payload = {
                 contents: [{ parts: [{ text: userQuery }] }],
@@ -281,12 +305,18 @@
                     });
 
                     const data = await response.json();
-                    if (!response.ok) throw new Error(data.error?.message || "Erro na API");
+                    if (!response.ok) {
+                        // Trata o erro específico de chave inválida
+                        if (data.error?.message?.includes("API key not valid")) {
+                            throw new Error("A chave da API inserida é inválida. Verifique e salve novamente.");
+                        }
+                        throw new Error(data.error?.message || "Erro na API");
+                    }
 
                     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
                     return JSON.parse(text);
                 } catch (err) {
-                    if (i === 4) throw err;
+                    if (i === 4 || err.message.includes("API Key") || err.message.includes("chave")) throw err;
                     await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
                 }
             }
