@@ -61,12 +61,18 @@
 
         <main class="bg-white rounded-xl shadow-lg p-4 md:p-5 border border-green-100 flex-grow mb-4">
             
+            <!-- Configuração da API -->
             <section class="mb-5 p-3 bg-blue-50 rounded-lg border border-dashed border-blue-200">
                 <label class="block text-[10px] font-bold text-blue-800 uppercase mb-1">Configuração da API Gemini</label>
                 <div class="flex gap-2">
                     <input type="password" id="api-key-input" class="flex-1 p-2 border border-blue-200 rounded text-xs outline-none" placeholder="Cole sua API Key...">
                     <button id="save-key-btn" class="bg-blue-900 text-white px-4 py-1 rounded text-[10px] font-bold uppercase hover:bg-blue-800 transition-all">Salvar</button>
                 </div>
+                <p class="mt-2 text-[10px] text-blue-600 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    Caso não tenha uma chave, 
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="underline font-bold hover:text-blue-800">obtenha sua API Key gratuita aqui.</a>
+                </p>
             </section>
 
             <section id="input-section" class="space-y-3">
