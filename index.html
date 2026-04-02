@@ -22,25 +22,25 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="min-h-screen p-2 md:p-4">
+<body class="min-h-screen p-2 md:p-4 flex flex-col">
 
     <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
 
-    <div class="max-w-4xl mx-auto flex flex-col min-h-[95vh]">
+    <div class="max-w-4xl mx-auto flex flex-col min-h-[95vh] w-full flex-grow">
         <header class="mb-4">
             <div class="flex items-center justify-between w-full">
                 <div class="flex flex-col items-start">
-                    <h1 class="text-xl md:text-2xl font-bold text-gray-800 tracking-tight flex items-center gap-x-2">
+                    <h1 class="text-xl md:text-2xl font-bold text-gray-800 tracking-tight flex items-baseline">
                         <span>Análise de CV</span>
-                        <span class="text-blue-900 font-extrabold text-xl tracking-tighter">by XPTOAY</span>
+                        <sup class="ml-1 text-[10px] md:text-xs font-black text-blue-900 uppercase tracking-tighter">by XPTOAY</sup>
                     </h1>
                     <div id="api-status-badge" class="flex items-center gap-1.5 bg-gray-100 text-gray-500 px-3 py-0.5 rounded-full text-[10px] font-bold border border-gray-200 uppercase tracking-wide mt-1">
                         Aguardando API Key...
                     </div>
                 </div>
-                <!-- Logotipo Ícone -->
-                <div class="bg-blue-900 p-2 rounded-lg shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+                <!-- Logotipo XPTOAY -->
+                <div class="bg-white p-1 rounded-lg shadow-sm border border-gray-100">
+                    <img src="Logo XptoAY.png" alt="Logo XPTOAY" class="w-12 h-12 object-contain" onerror="this.parentElement.innerHTML='<div class=\'bg-blue-900 p-2 rounded-lg\'><svg xmlns=\'http://www.w3.org/2000/svg\' class=\'w-6 h-6 text-white\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\'/><circle cx=\'9\' cy=\'7\' r=\'4\'/><polyline points=\'16 11 18 13 22 9\'/></svg></div>'">
                 </div>
             </div>
         </header>
@@ -153,6 +153,15 @@
                 </div>
             </section>
         </main>
+
+        <footer class="mt-auto py-6 text-center border-t border-green-100">
+            <p class="text-[10px] text-gray-400 font-medium uppercase tracking-widest mb-1">
+                © 2026 XptoAY - Soluções em IA & Privacidade
+            </p>
+            <p class="text-[9px] text-gray-300">
+                Todos os direitos reservados. Processamento local seguro.
+            </p>
+        </footer>
     </div>
 
     <script>
