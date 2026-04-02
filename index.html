@@ -48,11 +48,10 @@
                     </h1>
                     <div class="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-0.5 rounded-full text-[10px] font-bold border border-green-100 uppercase tracking-wide mt-1">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        v2.5.9 - Custom Logo PNG
+                        v2.6.0 - Resiliência de Quota
                     </div>
                 </div>
                 
-                <!-- Logo XptoAY configurado para usar o arquivo PNG -->
                 <div class="flex-shrink-0 flex flex-col items-end">
                     <img src="Logo XptoAY.png" alt="Logo XptoAY" class="h-12 md:h-14 w-auto object-contain drop-shadow-sm" onerror="this.style.display='none'; document.getElementById('logo-text-fallback').style.display='block';">
                     <div id="logo-text-fallback" class="logo-fallback">XptoAY</div>
@@ -95,7 +94,7 @@
                     <input type="password" id="api-key-input" class="flex-1 p-2 border border-blue-200 rounded text-xs outline-none focus:ring-1 focus:ring-blue-400" placeholder="Insira sua API Key aqui...">
                     <button id="save-key-btn" class="bg-blue-900 text-white px-4 py-1 rounded text-[10px] font-bold uppercase hover:bg-blue-800 transition-colors">Salvar</button>
                 </div>
-                <p class="text-[9px] text-blue-600 mt-1 italic">* Erro de Quota? Tente novamente em 30 segundos.</p>
+                <p class="text-[9px] text-blue-600 mt-1 italic">* Nota: O plano gratuito tem limites por minuto (RPM) além do limite diário.</p>
             </section>
 
             <section id="input-section" class="space-y-3">
@@ -242,7 +241,7 @@
             clean = clean.replace(/(\+?\d{1,4}\s?)?(\(?\d{2,3}\)?\s?)?(\d{4,5}[-\s]?\d{4})/g, "[TELEFONE]");
             clean = clean.replace(/linkedin\.com\/in\/[a-zA-Z0-9-]+/gi, "linkedin.com/in/[PERFIL]");
             
-            return clean.substring(0, 10000).trim();
+            return clean.substring(0, 8000).trim(); // Reduzido ligeiramente para poupar TPM
         }
 
         ui.cvFile.onchange = async (e) => {
@@ -272,7 +271,7 @@
             reader.readAsArrayBuffer(file);
         };
 
-        async function fetchGemini(prompt, currentKey, retries = 3, delay = 2000) {
+        async function fetchGemini(prompt, currentKey, retries = 5, delay = 2000) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${currentKey}`;
             
             try {
@@ -282,7 +281,8 @@
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: prompt }] }],
                         generationConfig: { 
-                            responseMimeType: "application/json"
+                            responseMimeType: "application/json",
+                            temperature: 0.2 // Mais baixo para ser mais determinístico e rápido
                         }
                     })
                 });
@@ -290,9 +290,16 @@
                 const data = await response.json();
 
                 if (!response.ok) {
+                    // Erro 429 é limite de quota (TPM/RPM)
                     if (response.status === 429) {
-                        throw new Error("Limite de cota excedido. Aguarde alguns instantes.");
+                        if (retries > 0) {
+                            // Backoff exponencial: 2s, 4s, 8s, 16s, 32s
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            return fetchGemini(prompt, currentKey, retries - 1, delay * 2);
+                        }
+                        throw new Error("Limite de quota atingido (RPM/TPM). Aguarde 60 segundos e tente novamente.");
                     }
+                    
                     if (retries > 0 && response.status >= 500) {
                         await new Promise(resolve => setTimeout(resolve, delay));
                         return fetchGemini(prompt, currentKey, retries - 1, delay * 2);
@@ -305,7 +312,7 @@
                 return JSON.parse(textResult);
 
             } catch (err) {
-                if (retries > 0 && !err.message.includes("cota")) {
+                if (retries > 0 && (err.message.includes("quota") || err.message.includes("fetch"))) {
                     await new Promise(resolve => setTimeout(resolve, delay));
                     return fetchGemini(prompt, currentKey, retries - 1, delay * 2);
                 }
@@ -322,10 +329,14 @@
             if(!currentKey) return toast("Insira uma API Key para continuar.", true);
             
             ui.analyzeBtn.disabled = true;
-            ui.analyzeText.innerText = "Analisando...";
+            ui.analyzeText.innerText = "Aguardando Quota...";
             ui.spinner.classList.remove('hidden');
 
-            const prompt = `Analise a vaga vs currículo. VAGA: ${job.substring(0,2000)}. CV: ${cv}. Retorne JSON: {"score": 0-100, "strengths": [], "gaps": [], "tips": [], "summary": ""}`;
+            // Prompt otimizado para ser curto e economizar tokens de entrada/saída
+            const prompt = `Analise a aderência do currículo à vaga.
+            VAGA: ${job.substring(0,1500)}
+            CV: ${cv.substring(0,6000)}
+            Retorne JSON estrito: {"score":0-100,"strengths":["max3"],"gaps":["max3"],"tips":["max3"],"summary":"curto"}`;
 
             try {
                 const resultData = await fetchGemini(prompt, currentKey);
