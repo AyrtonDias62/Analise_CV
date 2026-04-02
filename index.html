@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análise de CV by XptoAY - Exportação Local</title>
+    <title>Análise de CV by XptoAY - Gemini 2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
@@ -28,7 +28,6 @@
 
     <div class="max-w-4xl mx-auto flex flex-col min-h-[95vh]">
         
-        <!-- Cabeçalho com Logo na Extremidade Direita -->
         <header class="mb-4">
             <div class="flex items-center justify-between w-full">
                 <div class="flex flex-col items-start">
@@ -38,13 +37,14 @@
                     </h1>
                     <div class="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-0.5 rounded-full text-[10px] font-bold border border-green-100 uppercase tracking-wide mt-1">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        v21.5 - Anonimização Reforçada
+                        v2.5.7 - Quota management
                     </div>
                 </div>
                 
-                <!-- Logo na Extremidade Direita -->
                 <div class="flex-shrink-0">
-                    <img src="Logo XptoAY.png" alt="Logo XptoAY" class="h-12 md:h-16 w-auto object-contain" onerror="this.style.display='none'">
+                    <div class="h-12 md:h-16 w-32 bg-gray-100 rounded flex items-center justify-center text-[10px] text-gray-400 font-bold italic border border-dashed border-gray-300">
+                        Logo XptoAY
+                    </div>
                 </div>
             </div>
         </header>
@@ -55,7 +55,6 @@
                     <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Histórico da Sessão</h2>
                     <div class="flex gap-2">
                         <button id="download-csv-btn" class="bg-green-100 text-green-700 px-2 py-1 rounded text-[9px] font-bold uppercase hover:bg-green-200 transition-colors flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                             Exportar CSV
                         </button>
                         <button id="clear-local-btn" class="text-[9px] text-red-400 hover:text-red-600 font-bold uppercase">Limpar</button>
@@ -79,51 +78,51 @@
         <main class="bg-white rounded-xl shadow-lg p-4 md:p-5 border border-green-100 flex-grow mb-4">
             
             <section class="mb-5 p-3 bg-blue-50 rounded-lg border border-dashed border-blue-200">
-                <label class="block text-[10px] font-bold text-blue-800 uppercase mb-1">Status da API</label>
+                <label class="block text-[10px] font-bold text-blue-800 uppercase mb-1">Configuração de API (Gemini v1beta)</label>
                 <div class="flex gap-2">
-                    <input type="password" id="api-key-input" class="flex-1 p-2 border border-blue-200 rounded text-xs outline-none focus:ring-1 focus:ring-blue-400" placeholder="Insira sua Gemini API Key aqui...">
+                    <input type="password" id="api-key-input" class="flex-1 p-2 border border-blue-200 rounded text-xs outline-none focus:ring-1 focus:ring-blue-400" placeholder="Insira sua API Key aqui...">
                     <button id="save-key-btn" class="bg-blue-900 text-white px-4 py-1 rounded text-[10px] font-bold uppercase hover:bg-blue-800 transition-colors">Salvar</button>
                 </div>
+                <p class="text-[9px] text-blue-600 mt-1 italic">* Erro de Quota? Tente novamente em 30 segundos.</p>
             </section>
 
             <section id="input-section" class="space-y-3">
                 <div>
-                    <label class="block text-[11px] font-semibold text-gray-700 mb-1">O que a vaga busca?</label>
-                    <textarea id="job-description" rows="2" class="w-full p-2 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:bg-white outline-none" placeholder="Cole os requisitos da vaga aqui..."></textarea>
+                    <label class="block text-[11px] font-semibold text-gray-700 mb-1">Requisitos da Vaga</label>
+                    <textarea id="job-description" rows="2" class="w-full p-2 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:bg-white outline-none" placeholder="O que a vaga procura?"></textarea>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
                     <div class="space-y-1">
-                        <label class="block text-[11px] font-semibold text-gray-700">Selecionar Currículo</label>
+                        <label class="block text-[11px] font-semibold text-gray-700">Arquivo do Currículo (PDF)</label>
                         <div class="flex items-center gap-2">
                             <input type="file" id="cv-file" accept="application/pdf" class="hidden">
                             <button id="import-btn" class="bg-red-600 hover:bg-red-700 text-white font-medium py-1.5 px-3 rounded-lg flex items-center gap-2 text-xs transition-all shadow-sm">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                                <span id="import-btn-text">PDF</span>
+                                <span>Selecionar PDF</span>
                             </button>
                             <div id="file-loader" class="hidden items-center gap-1.5 text-[10px] text-blue-600 font-medium">
                                 <div class="spinner !border-blue-600 !border-t-transparent !w-3 !h-3"></div>
-                                Lendo...
+                                Lendo PDF...
                             </div>
                         </div>
                     </div>
                     
                     <button id="analyze-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg shadow-md transition-all flex items-center justify-center gap-2 text-xs">
-                        <span id="analyze-text">Analisar Candidato</span>
+                        <span id="analyze-text">Iniciar Análise</span>
                         <div id="analyze-spinner" class="spinner hidden"></div>
                     </button>
                 </div>
 
                 <div class="space-y-1">
-                    <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider text-right">Preview Texto Limpo (Anonimizado)</label>
-                    <textarea id="cv-text" rows="3" class="w-full p-2 border border-gray-100 rounded-lg outline-none text-[10px] bg-gray-50 text-gray-500 italic" readonly></textarea>
+                    <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider text-right">Texto Extraído e Anonimizado</label>
+                    <textarea id="cv-text" rows="3" class="w-full p-2 border border-gray-100 rounded-lg outline-none text-[10px] bg-gray-50 text-gray-500 italic" readonly placeholder="O texto aparecerá aqui após o upload..."></textarea>
                 </div>
             </section>
 
             <section id="result-section" class="hidden mt-4 space-y-3 animate-fade-in border-t pt-4">
                 <div class="flex items-center justify-between gap-2">
                     <div class="flex-1">
-                        <h2 class="text-base font-bold text-gray-800">Resultado da IA</h2>
+                        <h2 class="text-base font-bold text-gray-800">Resultado</h2>
                         <span id="current-candidate-name" class="text-[9px] font-semibold text-gray-400 uppercase block">---</span>
                     </div>
                     <div class="text-right">
@@ -136,15 +135,15 @@
 
                 <div class="grid md:grid-cols-3 gap-2">
                     <div class="bg-blue-50 p-2.5 rounded-lg border border-blue-100">
-                        <h3 class="font-bold text-blue-800 text-[10px] mb-1">Pontos Fortes</h3>
+                        <h3 class="font-bold text-blue-800 text-[10px] mb-1">PONTOS FORTES</h3>
                         <ul id="list-strengths" class="space-y-0.5 text-[10px] text-blue-900 list-disc pl-3"></ul>
                     </div>
                     <div class="bg-orange-50 p-2.5 rounded-lg border border-orange-100">
-                        <h3 class="font-bold text-orange-800 text-[10px] mb-1">Gaps / Melhoria</h3>
+                        <h3 class="font-bold text-orange-800 text-[10px] mb-1">GAPS TÉCNICOS</h3>
                         <ul id="list-improvements" class="space-y-0.5 text-[10px] text-orange-900 list-disc pl-3"></ul>
                     </div>
                     <div class="bg-green-50 p-2.5 rounded-lg border border-green-100">
-                        <h3 class="font-bold text-green-800 text-[10px] mb-1">Sugestões de Entrevista</h3>
+                        <h3 class="font-bold text-green-800 text-[10px] mb-1">SUGESTÕES</h3>
                         <ul id="list-suggestions" class="space-y-0.5 text-[10px] text-green-900 list-disc pl-3"></ul>
                     </div>
                 </div>
@@ -155,7 +154,7 @@
 
                 <div class="flex justify-center">
                     <button id="next-candidate-btn" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-5 py-1.5 rounded-lg font-bold text-xs">
-                        Limpar para Novo Currículo
+                        Novo Currículo
                     </button>
                 </div>
             </section>
@@ -163,289 +162,252 @@
 
         <footer class="text-center pb-4 pt-2">
             <p class="text-[10px] text-gray-400 font-medium">
-                &copy; 2026 Todos os direitos reservados - <span class="text-blue-900 font-bold">XptoAY</span> | Inteligência Artificial Local
+                &copy; 2026 Todos os direitos reservados - <span class="text-blue-900 font-bold">XptoAY</span> | Versão Estável API
             </p>
         </footer>
     </div>
 
     <script>
-        const targetModel = "gemini-2.5-flash-preview-09-2025";
+        const GEMINI_MODEL = "gemini-2.0-flash";
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-        let candidatesHistory = JSON.parse(localStorage.getItem('cv_history_local')) || [];
-        let currentFilename = "";
+        let history = JSON.parse(localStorage.getItem('cv_history_local')) || [];
+        let currentFile = "";
+        const apiKey = ""; 
         
-        // Carrega a chave salva anteriormente, se existir
-        let savedApiKey = localStorage.getItem('gemini_api_key') || "";
-
-        const els = {
-            keyInput: document.getElementById('api-key-input'),
-            saveKeyBtn: document.getElementById('save-key-btn'),
-            jobDescription: document.getElementById('job-description'),
+        const ui = {
+            key: document.getElementById('api-key-input'),
+            saveBtn: document.getElementById('save-key-btn'),
+            jobDesc: document.getElementById('job-description'),
             cvFile: document.getElementById('cv-file'),
             importBtn: document.getElementById('import-btn'),
-            importBtnText: document.getElementById('import-btn-text'),
             fileLoader: document.getElementById('file-loader'),
             cvText: document.getElementById('cv-text'),
             analyzeBtn: document.getElementById('analyze-btn'),
             analyzeText: document.getElementById('analyze-text'),
-            analyzeSpinner: document.getElementById('analyze-spinner'),
-            resultSection: document.getElementById('result-section'),
-            rankingSection: document.getElementById('ranking-section'),
+            spinner: document.getElementById('analyze-spinner'),
+            results: document.getElementById('result-section'),
+            rankingSec: document.getElementById('ranking-section'),
             rankingBody: document.getElementById('ranking-body'),
-            downloadCsvBtn: document.getElementById('download-csv-btn'),
-            clearLocalBtn: document.getElementById('clear-local-btn'),
-            compatibilityPercent: document.getElementById('compatibility-percent'),
-            compatibilityBar: document.getElementById('compatibility-bar'),
-            currentCandidateName: document.getElementById('current-candidate-name'),
-            listStrengths: document.getElementById('list-strengths'),
-            listImprovements: document.getElementById('list-improvements'),
-            listSuggestions: document.getElementById('list-suggestions'),
-            summaryText: document.getElementById('summary-text'),
-            nextCandidateBtn: document.getElementById('next-candidate-btn'),
-            toastContainer: document.getElementById('toast-container')
+            toast: document.getElementById('toast-container'),
+            score: document.getElementById('compatibility-percent'),
+            bar: document.getElementById('compatibility-bar'),
+            strengths: document.getElementById('list-strengths'),
+            gaps: document.getElementById('list-improvements'),
+            tips: document.getElementById('list-suggestions'),
+            summary: document.getElementById('summary-text')
         };
 
-        // Preenche o input se já tiver chave
-        if (savedApiKey) {
-            els.keyInput.value = savedApiKey;
-        }
+        const saved = localStorage.getItem('gemini_api_key');
+        if (saved) ui.key.value = saved;
 
         renderRanking();
 
-        function showToast(message, type = 'info') {
-            const toast = document.createElement('div');
-            toast.className = `${type === 'error' ? 'bg-red-600' : 'bg-blue-600'} text-white px-4 py-2 rounded-lg shadow-lg text-[11px] mb-2 animate-fade-in`;
-            toast.innerText = message;
-            els.toastContainer.appendChild(toast);
-            setTimeout(() => toast.remove(), 4000);
+        function toast(msg, err = false) {
+            const div = document.createElement('div');
+            div.className = `${err ? 'bg-red-600' : 'bg-green-700'} text-white px-4 py-2 rounded shadow-lg text-xs animate-fade-in`;
+            div.innerText = msg;
+            ui.toast.appendChild(div);
+            setTimeout(() => div.remove(), 5000);
         }
 
-        // Lógica de salvar a chave no LocalStorage
-        els.saveKeyBtn.addEventListener('click', () => {
-            const newKey = els.keyInput.value.trim();
-            if (newKey) {
-                localStorage.setItem('gemini_api_key', newKey);
-                savedApiKey = newKey;
-                showToast("Chave de API salva com sucesso!");
-            } else {
-                showToast("Por favor, insira uma chave válida.", "error");
-            }
-        });
+        ui.saveBtn.onclick = () => {
+            localStorage.setItem('gemini_api_key', ui.key.value.trim());
+            toast("Chave de API salva!");
+        };
 
-        function sanitizeText(text, filename) {
+        function anonymize(text, filename) {
             if (!text) return "";
-            
             let clean = text.replace(/[\u00AD\u200B\u200C\u200D\uFEFF]/g, '');
-
-            const nameTokens = filename.replace(/\.pdf$/i, '').split(/[^a-zA-Záàâãéèêíïóôõöúçñ]/gi).filter(t => t.length > 2);
-            nameTokens.forEach(token => {
-                clean = clean.replace(new RegExp(`\\b${token}\\b`, 'gi'), "[NOME]");
+            const fileNameWords = filename.split('.')[0].replace(/[-_]/g, ' ').split(/\s+/);
+            fileNameWords.forEach(word => {
+                if(word.length > 2) {
+                    const rgx = new RegExp(`\\b${word}\\b`, 'gi');
+                    clean = clean.replace(rgx, "[NOME]");
+                }
             });
-
-            clean = clean.replace(/[a-zA-Z0-9._%+-]+\s*@\s*[a-zA-Z0-9.-]+\s*\.\s*[a-zA-Z]{2,}/gi, "[E-MAIL]");
-            clean = clean.replace(/(?:\+?\s*5\s*5)?\s*\(?\s*\d\s*\d\s*\)?\s*\d?\s*\d\s*\d\s*\d\s*[\s.-]?\s*\d\s*\d\s*\d\s*\d/g, "[CONTATO]");
-
-            const keywords = "Rua|Avenida|Av\\.|Alameda|Al\\.|Travessa|Trav\\.|Praça|Pça\\.|Rodovia|Rod\\.|Estrada|Est\\.";
-            const stopWords = "Email|E-mail|Celular|Telefone|Contato|Data|Nascimento|Nasc\\.|Casada|Casado|Solteira|Solteiro|Divorciada|Divorciado|Viúva|Viúvo";
+            clean = clean.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi, "[E-MAIL]");
+            clean = clean.replace(/(\+?\d{1,4}\s?)?(\(?\d{2,3}\)?\s?)?(\d{4,5}[-\s]?\d{4})/g, "[TELEFONE]");
+            clean = clean.replace(/linkedin\.com\/in\/[a-zA-Z0-9-]+/gi, "linkedin.com/in/[PERFIL]");
             
-            const addressPattern = new RegExp(`\\b(${keywords})\\s*:?\\s+.*?(?=\\s+(${stopWords})|\\n|$)`, "gi");
-            clean = clean.replace(addressPattern, "[ENDEREÇO]");
-
-            const datePattern = /(?:Data\s+de\s+Nascimento|Nasc\.|Nascimento)\s*:?\\s*\d{2}[-/\.]\d{2}[-/\.]\d{4}/gi;
-            clean = clean.replace(datePattern, "[DATA-NASCIMENTO]");
-            clean = clean.replace(/\b\d{2}[-/\.]\d{2}[-/\.]\d{4}\b/g, "[DATA]");
-
-            const personalPattern = /\b(Casada|Casado|Solteira|Solteiro|Divorciada|Divorciado|Viúva|Viúvo)\b/gi;
-            clean = clean.replace(personalPattern, "[INFO-PESSOAL]");
-
-            clean = clean.replace(/\b\d{5}[-\s]?\d{3}\b/g, "[CEP]");
-
-            const localidadePattern = /[^,.\n]+?\s*-\s*[^,.\n]+?\s*-\s*[A-Z]{2}\b|[^,.\n]+?\/\s*[A-Z]{2}\b/gi;
-            clean = clean.replace(localidadePattern, "[LOCALIDADE]");
-
-            clean = clean.replace(/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g, "[DOCUMENTO]");
-
-            return clean.replace(/\s{2,}/g, ' ').trim();
+            // Reduzir tamanho para economizar tokens
+            return clean.substring(0, 10000).trim();
         }
 
-        async function callGemini(sysPrompt, userQuery) {
-            // Verifica se a chave existe antes de chamar
-            if (!savedApiKey) {
-                throw new Error("API Key não encontrada. Insira e salve a chave no campo acima.");
-            }
-
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${savedApiKey}`;
-            
-            const payload = {
-                contents: [{ parts: [{ text: userQuery }] }],
-                systemInstruction: { parts: [{ text: sysPrompt }] },
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "OBJECT",
-                        properties: {
-                            score: { type: "NUMBER" },
-                            strengths: { type: "ARRAY", items: { type: "STRING" } },
-                            gaps: { type: "ARRAY", items: { type: "STRING" } },
-                            tips: { type: "ARRAY", items: { type: "STRING" } },
-                            summary: { type: "STRING" }
-                        },
-                        required: ["score", "strengths", "gaps", "tips", "summary"]
-                    }
-                }
-            };
-
-            for (let i = 0; i < 5; i++) {
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    const data = await response.json();
-                    if (!response.ok) {
-                        // Trata o erro específico de chave inválida
-                        if (data.error?.message?.includes("API key not valid")) {
-                            throw new Error("A chave da API inserida é inválida. Verifique e salve novamente.");
-                        }
-                        throw new Error(data.error?.message || "Erro na API");
-                    }
-
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    return JSON.parse(text);
-                } catch (err) {
-                    if (i === 4 || err.message.includes("API Key") || err.message.includes("chave")) throw err;
-                    await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
-                }
-            }
-        }
-
-        els.cvFile.addEventListener('change', async (e) => {
+        ui.cvFile.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            currentFilename = file.name;
-            els.fileLoader.classList.remove('hidden');
-            
+            currentFile = file.name;
+            ui.fileLoader.classList.remove('hidden');
             const reader = new FileReader();
             reader.onload = async function() {
                 try {
-                    const typedarray = new Uint8Array(this.result);
-                    const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
-                    let fullText = "";
-                    for (let i = 1; i <= pdf.numPages; i++) {
+                    const data = new Uint8Array(this.result);
+                    const pdf = await pdfjsLib.getDocument({ data }).promise;
+                    let text = "";
+                    for (let i = 1; i <= Math.min(pdf.numPages, 10); i++) { // Limitar a 10 páginas para evitar estouro de tokens
                         const page = await pdf.getPage(i);
                         const content = await page.getTextContent();
-                        fullText += content.items.map(item => item.str).join(" ") + " ";
+                        text += content.items.map(s => s.str).join(" ") + "\n";
                     }
-                    els.cvText.value = sanitizeText(fullText, currentFilename);
-                    els.importBtnText.innerText = "PDF Lido";
-                    showToast("Currículo carregado.");
+                    ui.cvText.value = anonymize(text, currentFile);
+                    toast("PDF Processado.");
                 } catch (err) {
-                    showToast("Erro ao processar o PDF.", "error");
+                    toast("Erro ao ler PDF.", true);
                 } finally {
-                    els.fileLoader.classList.add('hidden');
+                    ui.fileLoader.classList.add('hidden');
                 }
             };
             reader.readAsArrayBuffer(file);
-        });
+        };
 
-        async function analyzeCV() {
-            const job = els.jobDescription.value.trim();
-            const cv = els.cvText.value.trim();
-            if (!job || !cv) { showToast("Preencha os campos.", "error"); return; }
+        async function fetchGemini(prompt, currentKey, retries = 3, delay = 2000) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${currentKey}`;
             
-            setLoading(true);
             try {
-                const res = await callGemini(
-                    "Você é um especialista em recrutamento (RH). Sua tarefa é comparar o currículo com os requisitos da vaga. O currículo está anonimizado.",
-                    `REQUISITOS DA VAGA:\n${job}\n\nCURRÍCULO:\n${cv}`
-                );
-                
-                const result = { id: Date.now(), name: currentFilename, score: res.score, details: res };
-                candidatesHistory.push(result);
-                localStorage.setItem('cv_history_local', JSON.stringify(candidatesHistory));
-                
-                renderRanking();
-                renderResult(result);
-                showToast("Análise concluída!");
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { 
+                            responseMimeType: "application/json"
+                        }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    if (response.status === 429) {
+                        throw new Error("Limite de cota excedido (Quota Exceeded). Aguarde 30 segundos.");
+                    }
+                    if (retries > 0 && response.status >= 500) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        return fetchGemini(prompt, currentKey, retries - 1, delay * 2);
+                    }
+                    throw new Error(data.error?.message || "Erro na API.");
+                }
+
+                const textResult = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!textResult) throw new Error("A IA não retornou dados.");
+                return JSON.parse(textResult);
+
             } catch (err) {
-                showToast("Erro: " + err.message, "error");
-            } finally {
-                setLoading(false);
+                if (retries > 0 && !err.message.includes("Quota")) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return fetchGemini(prompt, currentKey, retries - 1, delay * 2);
+                }
+                throw err;
             }
         }
 
-        function setLoading(isLoading) {
-            els.analyzeBtn.disabled = isLoading;
-            els.analyzeText.innerText = isLoading ? 'Processando...' : 'Analisar Candidato';
-            els.analyzeSpinner.classList.toggle('hidden', !isLoading);
+        ui.analyzeBtn.onclick = async () => {
+            const job = ui.jobDesc.value.trim();
+            const cv = ui.cvText.value.trim();
+            const currentKey = ui.key.value.trim() || apiKey;
+
+            if(!job || !cv) return toast("Preencha todos os campos.", true);
+            if(!currentKey) return toast("Insira uma API Key para continuar.", true);
+            
+            ui.analyzeBtn.disabled = true;
+            ui.analyzeText.innerText = "Analisando...";
+            ui.spinner.classList.remove('hidden');
+
+            const prompt = `Analise a vaga vs currículo. VAGA: ${job.substring(0,2000)}. CV: ${cv}. Retorne JSON: {"score": 0-100, "strengths": [], "gaps": [], "tips": [], "summary": ""}`;
+
+            try {
+                const resultData = await fetchGemini(prompt, currentKey);
+                
+                const historyItem = { 
+                    id: Date.now(), 
+                    name: currentFile, 
+                    score: resultData.score, 
+                    details: resultData 
+                };
+                
+                history.push(historyItem);
+                localStorage.setItem('cv_history_local', JSON.stringify(history));
+                
+                renderRanking();
+                showResult(historyItem);
+                toast("Análise finalizada!");
+            } catch (err) {
+                toast(err.message, true);
+                console.error(err);
+            } finally {
+                ui.analyzeBtn.disabled = false;
+                ui.analyzeText.innerText = "Iniciar Análise";
+                ui.spinner.classList.add('hidden');
+            }
+        };
+
+        function showResult(item) {
+            document.getElementById('current-candidate-name').innerText = item.name;
+            ui.score.innerText = `${item.score}%`;
+            ui.bar.style.width = `${item.score}%`;
+            
+            if (item.score >= 70) ui.bar.style.backgroundColor = "#22c55e";
+            else if (item.score >= 40) ui.bar.style.backgroundColor = "#f97316";
+            else ui.bar.style.backgroundColor = "#ef4444";
+            
+            const fillList = (el, arr) => el.innerHTML = (arr || []).map(x => `<li>${x}</li>`).join('');
+            fillList(ui.strengths, item.details.strengths);
+            fillList(ui.gaps, item.details.gaps);
+            fillList(ui.tips, item.details.tips);
+            ui.summary.innerText = item.details.summary || "";
+
+            ui.results.classList.remove('hidden');
+            ui.results.scrollIntoView({ behavior: 'smooth' });
         }
 
         function renderRanking() {
-            if (!candidatesHistory.length) return;
-            els.rankingSection.classList.remove('hidden');
-            const sorted = [...candidatesHistory].sort((a, b) => b.score - a.score);
-            els.rankingBody.innerHTML = sorted.map(item => `
-                <tr class="border-b hover:bg-gray-50 transition-colors">
-                    <td class="py-2 truncate max-w-[150px] font-medium">${item.name}</td>
-                    <td class="py-2 text-center font-bold text-blue-900">${item.score}%</td>
+            if (history.length === 0) return;
+            ui.rankingSec.classList.remove('hidden');
+            const sorted = [...history].sort((a, b) => b.score - a.score);
+            ui.rankingBody.innerHTML = sorted.map(item => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="py-2 truncate max-w-[180px] font-medium text-gray-700">${item.name}</td>
+                    <td class="py-2 text-center font-bold text-blue-800">${item.score}%</td>
                     <td class="py-2 text-right">
-                        <button onclick="viewById(${item.id})" class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold hover:bg-blue-100">VER</button>
+                        <button onclick="view(${item.id})" class="text-blue-600 font-bold hover:underline text-[10px] uppercase">Ver</button>
                     </td>
                 </tr>
             `).join('');
         }
 
-        window.viewById = (id) => {
-            const item = candidatesHistory.find(h => h.id === id);
-            if (item) renderResult(item);
+        window.view = (id) => showResult(history.find(x => x.id === id));
+        ui.importBtn.onclick = () => ui.cvFile.click();
+
+        document.getElementById('next-candidate-btn').onclick = () => {
+            ui.cvText.value = "";
+            ui.cvFile.value = "";
+            ui.results.classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        function renderResult(item) {
-            els.currentCandidateName.innerText = item.name;
-            els.compatibilityPercent.innerText = `${item.score}%`;
-            els.compatibilityBar.style.width = `${item.score}%`;
-            els.compatibilityBar.className = `h-full ${item.score >= 75 ? 'bg-green-500' : (item.score >= 50 ? 'bg-orange-500' : 'bg-red-500')}`;
-            
-            const list = (el, items) => el.innerHTML = items.length ? items.map(i => `<li>${i}</li>`).join('') : '<li>Nenhum dado retornado.</li>';
-            list(els.listStrengths, item.details.strengths);
-            list(els.listImprovements, item.details.gaps);
-            list(els.listSuggestions, item.details.tips);
-            
-            els.summaryText.innerText = item.details.summary;
-            els.resultSection.classList.remove('hidden');
-            els.resultSection.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        els.importBtn.addEventListener('click', () => els.cvFile.click());
-        els.analyzeBtn.addEventListener('click', analyzeCV);
-        els.nextCandidateBtn.addEventListener('click', () => {
-            els.cvFile.value = '';
-            els.cvText.value = '';
-            els.importBtnText.innerText = "PDF";
-            els.resultSection.classList.add('hidden');
-        });
-
-        els.clearLocalBtn.addEventListener('click', () => {
-            if(confirm("Deseja apagar o histórico local?")) {
-                candidatesHistory = [];
+        document.getElementById('clear-local-btn').onclick = () => {
+            if(confirm("Limpar histórico?")) {
+                history = [];
                 localStorage.removeItem('cv_history_local');
-                renderRanking();
-                els.resultSection.classList.add('hidden');
+                ui.rankingSec.classList.add('hidden');
+                ui.results.classList.add('hidden');
             }
-        });
+        };
 
-        els.downloadCsvBtn.addEventListener('click', () => {
-            let csv = "\uFEFFNome do Arquivo;Score (%);Resumo da Avaliação\n";
-            candidatesHistory.forEach(c => csv += `"${c.name}";"${c.score}";"${c.details.summary.replace(/"/g, '""')}"\n`);
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = `ranking_xptoay_${new Date().toISOString().slice(0,10)}.csv`;
+        document.getElementById('download-csv-btn').onclick = () => {
+            let csv = "\uFEFFNome do Arquivo;Compatibilidade;Resumo\n";
+            history.forEach(h => {
+                const summ = (h.details.summary || "").replace(/"/g, '""');
+                csv += `"${h.name}";"${h.score}%";"${summ}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'ranking_candidatos.csv');
             a.click();
-        });
+        };
     </script>
 </body>
 </html>
