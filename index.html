@@ -12,7 +12,7 @@
     <!-- Firebase Imports -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = JSON.parse(__firebase_config);
@@ -23,6 +23,7 @@
 
         // Variáveis de Estado
         let currentUser = null;
+        let isAuthReady = false;
         const MASTER_SALT = 'XPTOAY_BITOCA_2026';
         const LICENSE_STORAGE_KEY = 'xptoay_app_license';
 
@@ -45,42 +46,53 @@
 
         // Lógica de Ativação com Trava de Dispositivo
         async function checkLicense(key) {
-            if (!currentUser) return { valid: false, msg: "Aguardando conexão..." };
+            // REGRA 3: Aguardar autenticação antes de consultar Firestore
+            if (!currentUser || !isAuthReady) return { valid: false, msg: "Autenticando..." };
             
-            // 1. Validar formato
             if (!window.validateKeyFormat(key)) return { valid: false, msg: "Chave inválida." };
 
-            // 2. Verificar no banco de dados (Trava de Dispositivo)
-            // Usando o path obrigatório: /artifacts/{appId}/public/data/{collectionName}
-            const licenseDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'licenses', key);
-            const docSnap = await getDoc(licenseDocRef);
+            try {
+                // REGRA 1: Caminho estrito para dados públicos
+                const licenseDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'licenses', key);
+                const docSnap = await getDoc(licenseDocRef);
 
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                // Se já existir um dispositivo vinculado e for diferente do atual
-                if (data.deviceId && data.deviceId !== currentUser.uid) {
-                    return { valid: false, msg: "Esta chave já está em uso em outro dispositivo." };
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.deviceId && data.deviceId !== currentUser.uid) {
+                        return { valid: false, msg: "Esta chave já está em uso em outro dispositivo." };
+                    }
+                } else {
+                    await setDoc(licenseDocRef, {
+                        key: key,
+                        deviceId: currentUser.uid,
+                        activatedAt: new Date().toISOString(),
+                        owner: key.split('-')[1]
+                    });
                 }
-            } else {
-                // Primeira vez usando a chave: Registrar dispositivo
-                await setDoc(licenseDocRef, {
-                    key: key,
-                    deviceId: currentUser.uid,
-                    activatedAt: new Date().toISOString(),
-                    owner: key.split('-')[1]
-                });
+                return { valid: true };
+            } catch (error) {
+                console.error("Firestore Error:", error);
+                return { valid: false, msg: "Erro de permissão ou conexão." };
             }
-
-            return { valid: true };
         }
 
-        // Inicialização Auth
+        // REGRA 3: Inicialização Auth Prioritária
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Auth failed:", err);
+            }
+        };
+
         onAuthStateChanged(auth, async (user) => {
             currentUser = user;
-            if (!user) {
-                await signInAnonymously(auth);
-            } else {
-                // Verificar se já tem licença salva localmente
+            if (user) {
+                isAuthReady = true;
                 const saved = localStorage.getItem(LICENSE_STORAGE_KEY);
                 if (saved) {
                     const result = await checkLicense(saved);
@@ -91,18 +103,25 @@
                         showToast(result.msg);
                     }
                 }
+            } else {
+                isAuthReady = false;
+                initAuth();
             }
         });
 
-        // Evento do Botão de Ativação
         window.handleActivation = async () => {
+            if (!isAuthReady) {
+                showToast("Aguarde a conexão segura...");
+                return;
+            }
+            
             const btn = document.getElementById('activate-btn');
             const input = document.getElementById('license-key-input');
             const errorMsg = document.getElementById('license-error');
             
             const key = input.value.trim().toUpperCase();
             btn.disabled = true;
-            btn.innerHTML = "VERIFICANDO...";
+            btn.innerHTML = '<div class="flex items-center justify-center gap-2"><div class="spinner !w-4 !h-4"></div> VERIFICANDO...</div>';
 
             const result = await checkLicense(key);
 
