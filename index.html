@@ -62,14 +62,11 @@
             </button>
             <p id="license-error" class="text-red-500 text-[10px] mb-4 font-bold hidden uppercase italic">Chave de acesso inválida ou expirada.</p>
 
-            <!-- Gatilho Invisível para Admin (Canto inferior direito do card) -->
             <div onclick="document.getElementById('admin-panel').classList.toggle('hidden')" class="admin-trigger"></div>
             
-            <!-- Painel do Admin (Oculto por padrão) -->
             <div id="admin-panel" class="hidden mt-6 pt-6 border-t border-gray-100 text-left">
                 <div class="flex justify-between items-center mb-2">
                     <p class="text-[10px] font-bold text-blue-900 uppercase italic">Gerador de Licenças</p>
-                    <!-- NOVO: Botão para trocar licença atual -->
                     <button onclick="changeLicense()" class="text-[9px] text-red-500 font-bold hover:underline uppercase">Trocar Minha Chave</button>
                 </div>
                 <div class="flex gap-2">
@@ -232,7 +229,7 @@
     <script>
         // --- LÓGICA DE SEGURANÇA E LICENCIAMENTO ---
         const SECURITY = {
-            MASTER_SALT: 'XPTOAY_BITOCA_2026', // Sua chave mestre interna
+            MASTER_SALT: 'XPTOAY_BITOCA_2026',
             licenseStorageKey: 'xptoay_app_license',
             
             generateKey: (userId) => {
@@ -281,7 +278,6 @@
         };
 
         window.onload = () => {
-            // Verificar Licença primeiro
             const savedLicense = localStorage.getItem(SECURITY.licenseStorageKey);
             if (savedLicense && SECURITY.validate(savedLicense)) {
                 document.getElementById('lock-screen').classList.add('hidden');
@@ -300,7 +296,6 @@
             }
         };
 
-        // --- HANDLERS DO LICENCIAMENTO ---
         document.getElementById('activate-btn').onclick = () => {
             const key = document.getElementById('license-key-input').value.trim().toUpperCase();
             if (SECURITY.validate(key)) {
@@ -313,11 +308,10 @@
             }
         };
 
-        // FUNÇÃO PARA TROCAR A LICENÇA SALVA NO COMPUTADOR
         window.changeLicense = () => {
             if(confirm("Deseja remover a licença atual desta máquina e voltar para a tela de ativação?")) {
                 localStorage.removeItem(SECURITY.licenseStorageKey);
-                location.reload(); // Recarrega para mostrar a tela de bloqueio
+                location.reload();
             }
         };
 
@@ -342,7 +336,6 @@
             }
         });
 
-        // --- LÓGICA ORIGINAL DO APP ---
         function showToast(msg, type = 'info') {
             const t = document.createElement('div');
             t.className = `${type === 'error' ? 'bg-red-500' : 'bg-green-600'} text-white px-4 py-2 rounded-lg shadow-xl text-xs animate-fade-in mb-2 font-medium`;
@@ -389,13 +382,52 @@
             `).join('');
         }
 
+        /**
+         * FUNÇÃO DE ANONIMIZAÇÃO MELHORADA
+         * Identifica dados pelo contexto e pelo nome do arquivo
+         */
         function anonimize(text, filename) {
             if (!text) return "";
-            let clean = text.replace(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi, '[E-MAIL]');
-            clean = clean.replace(/\b\d{2,3}\.?\d{3}\.?\d{3}-?[\dX]\b/g, '[DOC]');
-            const telRegex = /(?:\(?\s*\d{2}\s*\)?\s*)?\d{4,5}\s*[-\s]?\s*\d{4}/g;
-            clean = clean.replace(telRegex, '[TEL]');
-            return clean.substring(0, 1500) + "... [PROTEGIDO]";
+            let clean = text;
+
+            // 1. Extrair termos do nome do arquivo para ocultar no texto
+            // (Remove extensões e separa por espaço, hífen ou underline)
+            const nameParts = filename.replace(/\.(pdf|docx|txt)$/i, '')
+                                     .split(/[\s\-_]+/)
+                                     .filter(p => p.length > 2);
+            
+            nameParts.forEach(part => {
+                // Criar regex case-insensitive para cada parte do nome
+                const reg = new RegExp(part, 'gi');
+                clean = clean.replace(reg, '[NOME_OCULTO]');
+            });
+
+            // 2. E-mails (Regex mais robusto)
+            clean = clean.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi, '[E-MAIL_REMOVIDO]');
+
+            // 3. Documentos (CPF/RG/CNH/PIS)
+            // CPF e RG com pontos e traços
+            clean = clean.replace(/\b\d{2,3}\.?\d{3}\.?\d{3}-?[\dX]\b/g, '[DOCUMENTO_OCULTO]');
+            // Datas de Nascimento (ex: 01/01/1990)
+            clean = clean.replace(/\b\d{2}\/\d{2}\/\d{2,4}\b/g, '[DATA_OCULTO]');
+
+            // 4. Telefone (Padrões brasileiros comuns)
+            const telRegex = /(?:\+?55\s?)?(?:\(?\s*\d{2}\s*\)?\s*)?\d{4,5}\s*[-\s]?\s*\d{4}/g;
+            clean = clean.replace(telRegex, '[TELEFONE_REMOVIDO]');
+
+            // 5. Endereços (Baseado em gatilhos de logradouro)
+            // Remove Rua, Avenida, Travessa, Alameda, CEP e números adjacentes
+            const addressGating = /\b(Rua|R\.|Av\.|Avenida|Travessa|Alameda|Al\.|Beco|Rodovia|Rod\.)\s+[^,;.\n]+(?:,\s*\d+|\s+n[ºo]\s*\d+)?/gi;
+            clean = clean.replace(addressGating, '[ENDEREÇO_REMOVIDO]');
+            
+            // CEP
+            clean = clean.replace(/\b\d{5}-?\d{3}\b/g, '[CEP_REMOVIDO]');
+
+            // 6. Redes Sociais / Links
+            clean = clean.replace(/(?:linkedin\.com\/in\/|github\.com\/|facebook\.com\/)[^\s\n,;]+/gi, '[LINK_SOCIAL_OCULTO]');
+
+            // Retornar apenas os primeiros 2500 caracteres para economia de token e proteção
+            return clean.substring(0, 2500) + "... [TEXTO FILTRADO PARA PRIVACIDADE]";
         }
 
         async function handleKeyTest(key) {
@@ -425,15 +457,21 @@
             document.getElementById('file-loader').classList.remove('hidden');
             const reader = new FileReader();
             reader.onload = async function() {
-                const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(this.result) }).promise;
-                let fullText = "";
-                for(let i=1; i<=pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const content = await page.getTextContent();
-                    fullText += content.items.map(it => it.str).join(" ") + " ";
+                try {
+                    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(this.result) }).promise;
+                    let fullText = "";
+                    for(let i=1; i<=pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const content = await page.getTextContent();
+                        fullText += content.items.map(it => it.str).join(" ") + " ";
+                    }
+                    // Passar o nome do arquivo para ajudar na anonimização
+                    els.cvText.value = anonimize(fullText, currentFilename);
+                } catch (err) {
+                    showToast("Erro ao ler PDF.", "error");
+                } finally {
+                    document.getElementById('file-loader').classList.add('hidden');
                 }
-                els.cvText.value = anonimize(fullText, currentFilename);
-                document.getElementById('file-loader').classList.add('hidden');
             };
             reader.readAsArrayBuffer(file);
         };
@@ -477,6 +515,7 @@
         window.loadFromHistory = (id) => updateUI(history.find(x => x.id === id));
         document.getElementById('next-candidate-btn').onclick = () => {
             els.cvText.value = ""; els.result.classList.add('hidden');
+            els.cvFile.value = "";
         };
     </script>
 </body>
