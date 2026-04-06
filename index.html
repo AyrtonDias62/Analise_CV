@@ -67,7 +67,11 @@
             
             <!-- Painel do Admin (Oculto por padrão) -->
             <div id="admin-panel" class="hidden mt-6 pt-6 border-t border-gray-100 text-left">
-                <p class="text-[10px] font-bold text-blue-900 uppercase mb-2 italic">Gerador de Licenças</p>
+                <div class="flex justify-between items-center mb-2">
+                    <p class="text-[10px] font-bold text-blue-900 uppercase italic">Gerador de Licenças</p>
+                    <!-- NOVO: Botão para trocar licença atual -->
+                    <button onclick="changeLicense()" class="text-[9px] text-red-500 font-bold hover:underline uppercase">Trocar Minha Chave</button>
+                </div>
                 <div class="flex gap-2">
                     <input type="text" id="new-user-id" class="flex-grow p-2 border rounded-lg text-xs outline-none focus:border-blue-900" placeholder="ID do Cliente (ex: MARCOS)">
                     <button id="generate-key-btn" class="bg-gray-800 text-white px-3 py-2 rounded-lg text-[10px] font-bold uppercase">Gerar</button>
@@ -306,6 +310,14 @@
             } else {
                 document.getElementById('license-error').classList.remove('hidden');
                 setTimeout(() => document.getElementById('license-error').classList.add('hidden'), 4000);
+            }
+        };
+
+        // FUNÇÃO PARA TROCAR A LICENÇA SALVA NO COMPUTADOR
+        window.changeLicense = () => {
+            if(confirm("Deseja remover a licença atual desta máquina e voltar para a tela de ativação?")) {
+                localStorage.removeItem(SECURITY.licenseStorageKey);
+                location.reload(); // Recarrega para mostrar a tela de bloqueio
             }
         };
 
