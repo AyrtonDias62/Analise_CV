@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análise de CV by XptoAY - Privacy & IA</title>
+    <title>Análise de CV by XptoAY - Gerador de Senhas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
@@ -15,17 +15,22 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // CONFIGURAÇÃO DE FALLBACK PARA AMBIENTES EXTERNOS (GITHUB)
+        // Configurações Globais
+        const MASTER_SALT = 'XPTOAY_BITOCA_2026';
+        const LICENSE_STORAGE_KEY = 'xptoay_app_license';
         let firebaseConfig = {};
+        let appId = 'xpto-cv-analyzer-prod';
+
+        // Tenta carregar configurações do ambiente Canvas
         try {
             if (typeof __firebase_config !== 'undefined') {
                 firebaseConfig = JSON.parse(__firebase_config);
             }
-        } catch (e) { console.error("Erro ao carregar config Firebase", e); }
+            if (typeof __app_id !== 'undefined') {
+                appId = __app_id;
+            }
+        } catch (e) { console.warn("Ambiente externo detectado ou erro na config."); }
 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'xpto-cv-analyzer-prod';
-        
-        // Inicialização Protegida
         let app, auth, db;
         if (firebaseConfig.apiKey) {
             app = initializeApp(firebaseConfig);
@@ -33,19 +38,13 @@
             db = getFirestore(app);
         }
 
-        // Variáveis de Estado
-        let currentUser = null;
-        let isAuthReady = false;
-        const MASTER_SALT = 'XPTOAY_BITOCA_2026';
-        const LICENSE_STORAGE_KEY = 'xptoay_app_license';
-
-        // Funções de Segurança (Expostas ao Window para os botões HTML)
-        window.generateKey = (userId) => {
-            if (!userId) return null;
-            const cleanId = userId.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-            if (!cleanId) return null;
-            const hash = CryptoJS.HmacSHA256(cleanId, MASTER_SALT).toString().substring(0, 8).toUpperCase();
-            return `XPTO-${cleanId}-${hash}`;
+        // --- FUNÇÕES DE SEGURANÇA EXPOSTAS ---
+        window.generateKey = (name) => {
+            if (!name) return null;
+            const cleanName = name.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (!cleanName) return null;
+            const hash = CryptoJS.HmacSHA256(cleanName, MASTER_SALT).toString().substring(0, 8).toUpperCase();
+            return `XPTO-${cleanName}-${hash}`;
         };
 
         window.validateKeyFormat = (key) => {
@@ -57,457 +56,266 @@
             return parts[2] === expectedHash;
         };
 
-        async function checkLicense(key) {
-            // Se não houver Firebase (ambiente local/github sem config), validamos apenas o formato
-            if (!db || !auth) {
-                console.warn("Firestore não configurado. Validando apenas formato offline.");
-                return window.validateKeyFormat(key) ? { valid: true } : { valid: false, msg: "Chave inválida." };
-            }
+        // --- LÓGICA DE ATIVAÇÃO ---
+        window.handleActivation = async () => {
+            const btn = document.getElementById('activate-btn');
+            const input = document.getElementById('license-key-input');
+            const errorMsg = document.getElementById('license-error');
+            const key = input.value.trim().toUpperCase();
 
-            if (!currentUser) return { valid: false, msg: "Aguardando conexão segura..." };
-            if (!window.validateKeyFormat(key)) return { valid: false, msg: "Chave inválida." };
+            if (!key) return;
+            btn.disabled = true;
+            btn.innerHTML = 'VALIDANDO...';
 
-            try {
-                const licenseDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'licenses', key);
-                const docSnap = await getDoc(licenseDocRef);
-
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data.deviceId && data.deviceId !== currentUser.uid) {
-                        return { valid: false, msg: "Esta chave já está em uso em outro dispositivo." };
-                    }
-                } else {
-                    await setDoc(licenseDocRef, {
-                        key: key,
-                        deviceId: currentUser.uid,
-                        activatedAt: new Date().toISOString(),
-                        owner: key.split('-')[1]
-                    });
-                }
-                return { valid: true };
-            } catch (error) {
-                console.error("Firestore Error:", error);
-                return { valid: false, msg: "Erro de permissão no servidor." };
-            }
-        }
-
-        const initAuth = async () => {
-            if (!auth) {
-                isAuthReady = true; // Libera offline se não houver Firebase
+            // 1. Validação Matemática (Offline)
+            if (!window.validateKeyFormat(key)) {
+                errorMsg.innerText = "Chave com formato inválido.";
+                errorMsg.classList.remove('hidden');
+                btn.disabled = false;
+                btn.innerHTML = "ATIVAR LICENÇA";
                 return;
             }
-            try {
+
+            // 2. Registro no Firebase (Online) se disponível
+            if (db && auth && auth.currentUser) {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'licenses', key);
+                    const snap = await getDoc(docRef);
+                    
+                    if (snap.exists() && snap.data().deviceId !== auth.currentUser.uid) {
+                        errorMsg.innerText = "Esta chave já está vinculada a outro dispositivo.";
+                        errorMsg.classList.remove('hidden');
+                        btn.disabled = false;
+                        btn.innerHTML = "ATIVAR LICENÇA";
+                        return;
+                    }
+
+                    await setDoc(docRef, {
+                        key,
+                        deviceId: auth.currentUser.uid,
+                        activatedAt: new Date().toISOString()
+                    }, { merge: true });
+
+                } catch (e) {
+                    console.error("Erro Firebase:", e);
+                }
+            }
+
+            // Sucesso (Offline ou Online)
+            localStorage.setItem(LICENSE_STORAGE_KEY, key);
+            document.getElementById('lock-screen').classList.add('hidden');
+            window.showToast?.("Acesso Liberado!");
+        };
+
+        // Inicialização de Auth
+        if (auth) {
+            onAuthStateChanged(auth, async (user) => {
+                const savedKey = localStorage.getItem(LICENSE_STORAGE_KEY);
+                if (savedKey && window.validateKeyFormat(savedKey)) {
+                    document.getElementById('lock-screen').classList.add('hidden');
+                }
+            });
+
+            const startAuth = async () => {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
-            } catch (err) {
-                console.error("Auth failed:", err);
-                isAuthReady = true; // Fallback para não travar a UI
-            }
-        };
-
-        if (auth) {
-            onAuthStateChanged(auth, async (user) => {
-                currentUser = user;
-                isAuthReady = true;
-                const saved = localStorage.getItem(LICENSE_STORAGE_KEY);
-                if (saved) {
-                    const result = await checkLicense(saved);
-                    if (result.valid) {
-                        document.getElementById('lock-screen').classList.add('hidden');
-                    } else {
-                        localStorage.removeItem(LICENSE_STORAGE_KEY);
-                    }
-                }
-            });
-            initAuth();
+            };
+            startAuth();
         } else {
-            // Se rodar sem Firebase, tenta validar o que está no localStorage puramente offline
-            isAuthReady = true;
-            const saved = localStorage.getItem(LICENSE_STORAGE_KEY);
-            if (saved && window.validateKeyFormat(saved)) {
+            // Se não houver Firebase, libera se tiver chave salva
+            const savedKey = localStorage.getItem(LICENSE_STORAGE_KEY);
+            if (savedKey && window.validateKeyFormat(savedKey)) {
                 document.getElementById('lock-screen').classList.add('hidden');
             }
         }
-
-        window.handleActivation = async () => {
-            const btn = document.getElementById('activate-btn');
-            const input = document.getElementById('license-key-input');
-            const errorMsg = document.getElementById('license-error');
-            
-            const key = input.value.trim().toUpperCase();
-            if (!key) return;
-
-            btn.disabled = true;
-            btn.innerHTML = 'VERIFICANDO...';
-
-            const result = await checkLicense(key);
-
-            if (result.valid) {
-                localStorage.setItem(LICENSE_STORAGE_KEY, key);
-                document.getElementById('lock-screen').classList.add('hidden');
-                if(window.showToast) window.showToast("Licença Ativada!");
-            } else {
-                errorMsg.innerText = result.msg;
-                errorMsg.classList.remove('hidden');
-            }
-            btn.disabled = false;
-            btn.innerHTML = "ATIVAR LICENÇA";
-        };
     </script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f0fdf4; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .spinner {
-            border: 3px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            border-top: 3px solid #fff;
-            width: 20px;
-            height: 20px;
+            border-top: 2px solid #fff;
+            width: 16px;
+            height: 16px;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        #lock-screen {
-            backdrop-filter: blur(12px);
-            background-color: rgba(255, 255, 255, 0.9);
-        }
-        
-        #floating-admin-panel {
-            display: none;
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 200;
-            width: 90%;
-            max-width: 400px;
-        }
     </style>
 </head>
-<body class="min-h-screen p-2 md:p-4 flex flex-col">
-
-    <!-- PAINEL ADMIN -->
-    <div id="floating-admin-panel" class="bg-white p-6 rounded-3xl shadow-2xl border-2 border-blue-900 animate-fade-in">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xs font-black text-blue-900 uppercase tracking-widest">Painel do Proprietário</h3>
-            <button onclick="toggleAdminPanel()" class="text-gray-400 hover:text-red-500 text-lg">&times;</button>
-        </div>
-        <div class="space-y-4">
-            <div>
-                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Gerar Nova Licença</label>
-                <div class="flex gap-2">
-                    <input type="text" id="new-user-id" class="flex-grow p-2 border rounded-lg text-xs outline-none focus:border-blue-900 uppercase" placeholder="NOME DO CLIENTE">
-                    <button onclick="btnGenerate()" class="bg-blue-900 text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase">Gerar</button>
-                </div>
-            </div>
-            <div id="generated-key-display" class="p-3 bg-blue-50 rounded-lg border border-dashed border-blue-300 hidden">
-                <div class="flex items-center justify-between">
-                    <code id="final-key" class="text-xs font-bold text-blue-900"></code>
-                    <button onclick="copyToClipboard()" class="text-[9px] bg-blue-200 text-blue-700 px-2 py-1 rounded font-bold uppercase">Copiar</button>
-                </div>
-            </div>
-            <div class="pt-4 border-t border-gray-100 flex justify-between items-center">
-                <button onclick="changeLicense()" class="text-[9px] text-red-500 font-bold hover:underline uppercase italic">Sair desta Máquina</button>
-            </div>
-        </div>
-    </div>
+<body class="min-h-screen">
 
     <!-- TELA DE BLOQUEIO -->
-    <div id="lock-screen" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl border border-gray-100 max-w-md w-full text-center animate-fade-in">
-            <div class="mb-6 flex justify-center">
-                <div class="bg-blue-900 p-4 rounded-2xl shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                </div>
+    <div id="lock-screen" class="fixed inset-0 z-[100] bg-white/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl border border-gray-100 max-w-sm w-full text-center animate-fade-in">
+            <div class="bg-blue-900 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
             </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h2>
-            <p class="text-sm text-gray-500 mb-6">Insira sua Chave de Licença <span class="font-bold text-blue-900 text-xs">XptoAY</span>.</p>
-            <input type="text" id="license-key-input" class="w-full p-4 border-2 border-gray-100 rounded-xl mb-4 text-center font-mono text-sm focus:border-blue-900 outline-none uppercase tracking-widest" placeholder="XPTO-XXXX-XXXX">
-            <button id="activate-btn" onclick="handleActivation()" class="w-full bg-blue-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg transition-all mb-4">ATIVAR LICENÇA</button>
-            <p id="license-error" class="text-red-500 text-[10px] mb-4 font-bold hidden uppercase italic">Erro na ativação.</p>
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Ativar Software</h2>
+            <p class="text-xs text-gray-400 mb-6">Insira sua licença XptoAY para continuar.</p>
+            
+            <input type="text" id="license-key-input" class="w-full p-4 border-2 border-gray-100 rounded-xl mb-4 text-center font-mono text-sm focus:border-blue-900 outline-none uppercase tracking-widest" placeholder="XPTO-NOME-HASH">
+            
+            <button id="activate-btn" onclick="handleActivation()" class="w-full bg-blue-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">
+                ATIVAR LICENÇA
+            </button>
+            
+            <p id="license-error" class="text-red-500 text-[10px] mt-4 font-bold hidden italic uppercase">Chave Inválida</p>
         </div>
     </div>
 
-    <div id="toast-container" class="fixed top-4 right-4 z-[150] flex flex-col gap-2"></div>
+    <!-- PAINEL ADMIN (BOTÃO E MODAL) -->
+    <button onclick="toggleAdmin()" class="fixed bottom-4 right-4 bg-gray-800 text-white p-3 rounded-full shadow-lg z-[110] text-[10px] font-bold hover:bg-blue-900 transition-all uppercase tracking-tighter">
+        Admin
+    </button>
 
-    <div class="max-w-4xl mx-auto flex flex-col min-h-[95vh] w-full flex-grow">
-        <header class="mb-4">
-            <div class="flex items-center justify-between w-full">
-                <div class="flex flex-col items-start">
-                    <h1 class="text-xl md:text-2xl font-bold text-gray-800 tracking-tight flex items-baseline">
-                        <span>Análise de CV</span>
-                        <sup class="ml-1 text-[10px] md:text-xs font-black text-blue-900 tracking-tighter">by XptoAY</sup>
-                    </h1>
-                    <div id="api-status-badge" class="flex items-center gap-1.5 bg-gray-100 text-gray-500 px-3 py-0.5 rounded-full text-[10px] font-bold border border-gray-200 uppercase tracking-wide mt-1">
-                        Aguardando API Key...
-                    </div>
-                </div>
-                <div class="bg-white p-1 rounded-lg shadow-sm border border-gray-100">
-                    <div class="w-12 h-12 overflow-hidden rounded-lg flex items-center justify-center">
-                        <img src="Logo XptoAY.png" alt="Logo XptoAY" class="w-full h-full object-contain" onerror="this.parentElement.innerHTML='<div class=\'bg-blue-900 p-2 rounded-lg text-white font-bold text-[10px]\'>XPTO</div>'">
-                    </div>
-                </div>
+    <div id="admin-panel" class="fixed inset-0 z-[120] bg-black/50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl animate-fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-black text-blue-900 uppercase text-xs tracking-widest">Gerador de Licenças</h3>
+                <button onclick="toggleAdmin()" class="text-gray-400 text-2xl">&times;</button>
             </div>
-        </header>
-
-        <!-- API CONFIG -->
-        <section id="api-config" class="mb-3 animate-fade-in">
-            <div class="bg-blue-900 text-white rounded-xl p-3 shadow-md border-b-4 border-blue-950">
-                <p class="text-[10px] font-bold uppercase opacity-80 mb-1 text-center">Configuração de Segurança</p>
-                <div class="flex gap-2">
-                    <div class="relative flex-grow">
-                        <input type="password" id="custom-api-key" class="w-full bg-blue-800 border border-blue-700 rounded px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400 placeholder-blue-300 pr-8" placeholder="Insira sua Gemini API Key...">
-                    </div>
-                    <button id="test-key-btn" onclick="testApiKey()" class="bg-blue-600 px-3 py-1.5 rounded text-[10px] font-bold hover:bg-blue-500 transition-colors flex items-center gap-1">
-                        <span>CONECTAR</span>
-                        <div id="test-spinner" class="spinner !w-2 !h-2 hidden"></div>
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- RANKING -->
-        <section id="ranking-section" class="hidden mb-3 animate-fade-in">
-            <div class="bg-white rounded-xl shadow-sm border border-green-100 p-3">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Ranking de Candidatos</h2>
-                    <div class="flex gap-3">
-                        <button onclick="clearHistory()" class="text-[9px] text-red-400 hover:text-red-600 font-bold uppercase">Limpar Tudo</button>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="text-[9px] uppercase text-gray-400 border-b">
-                                <th class="pb-1">Candidato</th>
-                                <th class="pb-1 text-center">Score</th>
-                                <th class="pb-1 text-right">Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ranking-body" class="text-[11px]"></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- MAIN APP -->
-        <main class="bg-white rounded-xl shadow-lg p-4 md:p-6 border border-green-100 flex-grow mb-4 relative">
+            
             <div class="space-y-4">
                 <div>
-                    <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Requisitos da Função</label>
-                    <textarea id="job-description" rows="3" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-xs bg-gray-50 transition-all" placeholder="Ex: Experiência com atendimento, pacote office..."></textarea>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Nome/ID do Cliente</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="admin-user-id" class="flex-grow p-3 border rounded-xl text-xs outline-none focus:border-blue-900 uppercase font-mono" placeholder="CLIENTE01">
+                        <button onclick="uiGenerateKey()" class="bg-blue-900 text-white px-6 py-3 rounded-xl text-[10px] font-bold uppercase active:scale-95">Gerar</button>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                    <div class="space-y-2">
-                        <label class="block text-[11px] font-bold text-gray-600 uppercase">Documento do Candidato</label>
-                        <div class="flex items-center gap-3">
-                            <input type="file" id="cv-file" accept="application/pdf" class="hidden">
-                            <button onclick="document.getElementById('cv-file').click()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded-xl flex items-center gap-2 text-xs shadow-sm transition-all">
-                                <span>Selecionar PDF</span>
-                            </button>
-                            <div id="file-loader" class="hidden items-center gap-2 text-[10px] text-blue-600 font-bold animate-pulse">
-                                <div class="spinner !border-blue-600 !border-t-transparent !w-3 !h-3"></div>
-                                ANONIMIZANDO...
-                            </div>
-                        </div>
+                <div id="key-result-box" class="hidden p-4 bg-blue-50 border-2 border-dashed border-blue-200 rounded-2xl">
+                    <p class="text-[9px] font-bold text-blue-400 uppercase mb-2">Chave Gerada:</p>
+                    <div class="flex items-center justify-between">
+                        <code id="display-key" class="text-sm font-bold text-blue-900 tracking-widest"></code>
+                        <button onclick="copyKey()" class="bg-blue-200 text-blue-700 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase">Copiar</button>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-gray-100">
+                    <button onclick="forceReset()" class="text-[10px] text-red-500 font-bold uppercase hover:underline">Remover Licença desta Máquina</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI PRINCIPAL -->
+    <div class="max-w-4xl mx-auto p-4 md:p-8">
+        <header class="flex justify-between items-start mb-8">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Análise de CV <sup class="text-blue-900 text-[10px] font-black uppercase">by XptoAY</sup></h1>
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Inteligência Artificial & Privacidade</p>
+            </div>
+            <div class="w-12 h-12 bg-blue-900 rounded-xl flex items-center justify-center text-white font-bold text-xs">XPTO</div>
+        </header>
+
+        <main class="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
+            <div class="space-y-6">
+                <!-- Requisitos -->
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-500 uppercase mb-2">Perfil Desejado</label>
+                    <textarea id="job-desc" class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs min-h-[100px] outline-none focus:ring-2 focus:ring-blue-900/10 transition-all" placeholder="Quais competências você busca?"></textarea>
+                </div>
+
+                <!-- Upload -->
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="p-4 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center hover:border-blue-900 transition-all group">
+                        <input type="file" id="cv-upload" class="hidden" accept=".pdf">
+                        <button onclick="document.getElementById('cv-upload').click()" class="text-xs font-bold text-gray-600 group-hover:text-blue-900">Selecionar PDF do Candidato</button>
+                        <p id="file-name" class="text-[10px] text-blue-500 mt-2 font-mono truncate max-w-full"></p>
                     </div>
                     
-                    <button id="analyze-btn" onclick="startAnalysis()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
-                        <span id="analyze-text">Analisar Candidato ✨</span>
-                        <div id="analyze-spinner" class="spinner hidden"></div>
+                    <button onclick="runAnalysis()" class="bg-blue-900 text-white rounded-2xl font-bold uppercase text-xs tracking-widest hover:bg-black transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                        <span>Iniciar Análise</span>
+                        <div id="loader" class="spinner hidden"></div>
                     </button>
                 </div>
 
-                <div class="bg-gray-50 rounded-lg p-3 border border-dashed border-gray-200">
-                    <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Visualização Protegida (LGPD)</label>
-                    <textarea id="cv-text" rows="3" class="w-full bg-transparent text-[10px] text-gray-500 italic cursor-not-allowed outline-none resize-none" readonly placeholder="Dados sensíveis serão ocultados..."></textarea>
+                <div id="results-area" class="hidden animate-fade-in border-t pt-8">
+                    <div class="bg-blue-50 rounded-2xl p-6 text-center mb-6">
+                        <p class="text-[10px] font-bold text-blue-900 uppercase mb-1">Match Score</p>
+                        <h2 id="final-score" class="text-5xl font-black text-blue-900">0%</h2>
+                    </div>
+                    <div id="summary" class="text-xs text-gray-600 leading-relaxed bg-gray-50 p-6 rounded-2xl"></div>
                 </div>
             </div>
-
-            <!-- RESULTADOS -->
-            <section id="result-section" class="hidden mt-6 space-y-4 animate-fade-in border-t pt-6">
-                <div class="flex items-center justify-between bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                    <div>
-                        <h2 class="text-lg font-bold text-gray-800">Análise de Match</h2>
-                        <span id="current-candidate-name" class="text-[10px] text-gray-400 font-mono bg-white px-2 py-0.5 rounded border">---</span>
-                    </div>
-                    <div class="text-right">
-                        <span id="compatibility-percent" class="text-3xl font-black text-green-600">0%</span>
-                    </div>
-                </div>
-                <div class="grid md:grid-cols-3 gap-3">
-                    <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100"><p class="text-[10px] font-black text-blue-800 uppercase mb-2">Pontos Fortes</p><ul id="list-strengths" class="text-[11px] text-blue-900 space-y-1 list-disc pl-4"></ul></div>
-                    <div class="bg-red-50/50 p-4 rounded-xl border border-red-100"><p class="text-[10px] font-black text-red-800 uppercase mb-2">Gaps</p><ul id="list-improvements" class="text-[11px] text-red-900 space-y-1 list-disc pl-4"></ul></div>
-                    <div class="bg-yellow-50/50 p-4 rounded-xl border border-yellow-100"><p class="text-[10px] font-black text-yellow-800 uppercase mb-2">Sugestões</p><ul id="list-suggestions" class="text-[11px] text-yellow-900 space-y-1 list-disc pl-4"></ul></div>
-                </div>
-                <div class="bg-white p-4 rounded-xl border border-gray-200 italic text-[11px] text-gray-600 leading-relaxed"><p id="summary-text"></p></div>
-                <div class="flex justify-center border-t pt-6"><button onclick="newAnalysis()" class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-3 px-8 rounded-xl border border-blue-200 text-xs uppercase shadow-sm">Novo Candidato</button></div>
-            </section>
         </main>
-
-        <footer class="mt-auto py-6 border-t border-green-100 text-center relative">
-            <p class="text-[10px] text-gray-400 font-medium tracking-widest">
-                &copy; 2026 - AnaliseCV v4.8 - <span class="text-blue-900 font-bold">XptoAY</span>.
-            </p>
-            <div onclick="toggleAdminPanel()" class="absolute bottom-1 right-1 w-4 h-4 cursor-default opacity-0 hover:opacity-10 bg-blue-900 rounded-full"></div>
-        </footer>
     </div>
 
+    <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-[200] bg-black text-white px-6 py-3 rounded-full text-[10px] font-bold uppercase hidden animate-fade-in"></div>
+
     <script>
-        // Funções da UI
-        const APP_CONFIG = { storageKey: 'xptoay_gemini_key', historyKey: 'xptoay_analysis_history' };
-        let detectedModels = [];
-        let history = JSON.parse(localStorage.getItem(APP_CONFIG.historyKey) || '[]');
-        let currentFilename = "";
-
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-
-        window.toggleAdminPanel = () => {
-            const p = document.getElementById('floating-admin-panel');
-            p.style.display = p.style.display === 'block' ? 'none' : 'block';
+        // Funções de Interface
+        window.toggleAdmin = () => {
+            const el = document.getElementById('admin-panel');
+            el.classList.toggle('hidden');
         };
 
-        window.btnGenerate = () => {
-            const id = document.getElementById('new-user-id').value;
+        window.uiGenerateKey = () => {
+            const id = document.getElementById('admin-user-id').value;
             const key = window.generateKey(id);
-            if(key) {
-                document.getElementById('generated-key-display').classList.remove('hidden');
-                document.getElementById('final-key').innerText = key;
-                showToast("Chave gerada!");
+            if (key) {
+                document.getElementById('key-result-box').classList.remove('hidden');
+                document.getElementById('display-key').innerText = key;
+                showToast("Licença gerada com sucesso!");
+            } else {
+                showToast("Insira um nome válido");
             }
         };
 
-        window.copyToClipboard = () => {
-            const key = document.getElementById('final-key').innerText;
-            const el = document.createElement("input"); el.value = key;
-            document.body.appendChild(el); el.select(); document.execCommand("copy");
-            document.body.removeChild(el); showToast("Copiado!");
+        window.copyKey = () => {
+            const key = document.getElementById('display-key').innerText;
+            const temp = document.createElement('input');
+            temp.value = key;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            showToast("Chave copiada!");
         };
 
-        window.changeLicense = () => {
-            if(confirm("Sair?")) { localStorage.removeItem('xptoay_app_license'); location.reload(); }
-        };
-
-        window.showToast = (m) => {
-            const t = document.createElement('div');
-            t.className = `bg-blue-900 text-white px-4 py-2 rounded-lg text-[10px] font-bold animate-fade-in mb-2`;
-            t.innerText = m; document.getElementById('toast-container').appendChild(t);
-            setTimeout(() => t.remove(), 3000);
-        };
-
-        async function testApiKey() {
-            const key = document.getElementById('custom-api-key').value.trim();
-            if(!key) return;
-            document.getElementById('test-spinner').classList.remove('hidden');
-            try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-                if(res.ok) {
-                    const data = await res.json();
-                    detectedModels = data.models.filter(m => m.supportedGenerationMethods.includes('generateContent')).map(m => m.name.replace('models/', ''));
-                    document.getElementById('api-status-badge').innerText = "API OK";
-                    document.getElementById('api-status-badge').classList.replace('bg-gray-100', 'bg-green-100');
-                    localStorage.setItem(APP_CONFIG.storageKey, key);
-                } else { showToast("API Key Inválida"); }
-            } catch(e) { showToast("Erro de conexão"); }
-            finally { document.getElementById('test-spinner').classList.add('hidden'); }
-        }
-
-        document.getElementById('cv-file').onchange = async (e) => {
-            const file = e.target.files[0]; if(!file) return;
-            currentFilename = file.name;
-            document.getElementById('file-loader').classList.remove('hidden');
-            const reader = new FileReader();
-            reader.onload = async function() {
-                const pdf = await pdfjsLib.getDocument({data: new Uint8Array(this.result)}).promise;
-                let text = "";
-                for(let i=1; i<=pdf.numPages; i++){
-                    const page = await pdf.getPage(i);
-                    const content = await page.getTextContent();
-                    text += content.items.map(it => it.str).join(" ");
-                }
-                document.getElementById('cv-text').value = anonimize(text, currentFilename);
-                document.getElementById('file-loader').classList.add('hidden');
-            };
-            reader.readAsArrayBuffer(file);
-        };
-
-        function anonimize(t, f) {
-            let c = t;
-            const parts = f.replace(/\..+$/, '').split(/[\s_-]+/).filter(p => p.length > 2);
-            parts.forEach(p => c = c.replace(new RegExp(p, 'gi'), '[OCULTO]'));
-            return c.substring(0, 2500) + "... [PROTEGIDO]";
-        }
-
-        async function startAnalysis() {
-            const key = localStorage.getItem(APP_CONFIG.storageKey);
-            const cv = document.getElementById('cv-text').value;
-            const job = document.getElementById('job-description').value;
-            if(!key || !cv) return showToast("Falta API ou CV");
-            document.getElementById('analyze-btn').disabled = true;
-            document.getElementById('analyze-spinner').classList.remove('hidden');
-            try {
-                const model = detectedModels.find(m => m.includes('1.5-flash')) || detectedModels[0] || 'gemini-1.5-flash';
-                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: `RH: Analise CV para vaga: ${job}. Retorne JSON: {"score":0-100, "strengths":[], "gaps":[], "tips":[], "summary":""}. CV: ${cv}` }] }],
-                        generationConfig: { responseMimeType: "application/json" }
-                    })
-                });
-                const data = JSON.parse((await resp.json()).candidates[0].content.parts[0].text);
-                const item = { id: Date.now(), name: currentFilename, score: data.score, details: data };
-                history.push(item);
-                localStorage.setItem(APP_CONFIG.historyKey, JSON.stringify(history));
-                updateResultsUI(item);
-                renderRanking();
-            } catch(e) { showToast("Erro na IA"); }
-            finally {
-                document.getElementById('analyze-btn').disabled = false;
-                document.getElementById('analyze-spinner').classList.add('hidden');
+        window.forceReset = () => {
+            if(confirm("Deseja realmente remover a licença e bloquear o app?")) {
+                localStorage.removeItem('xptoay_app_license');
+                location.reload();
             }
-        }
+        };
 
-        function updateResultsUI(i) {
-            document.getElementById('result-section').classList.remove('hidden');
-            document.getElementById('current-candidate-name').innerText = i.name;
-            document.getElementById('compatibility-percent').innerText = `${i.score}%`;
-            document.getElementById('list-strengths').innerHTML = i.details.strengths.map(s => `<li>${s}</li>`).join('');
-            document.getElementById('list-improvements').innerHTML = i.details.gaps.map(g => `<li>${g}</li>`).join('');
-            document.getElementById('list-suggestions').innerHTML = i.details.tips.map(t => `<li>${t}</li>`).join('');
-            document.getElementById('summary-text').innerText = i.details.summary;
-            document.getElementById('result-section').scrollIntoView({behavior: 'smooth'});
-        }
+        window.showToast = (msg) => {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3000);
+        };
 
-        function renderRanking() {
-            if(!history.length) return;
-            document.getElementById('ranking-section').classList.remove('hidden');
-            document.getElementById('ranking-body').innerHTML = [...history].sort((a,b)=>b.score-a.score).map(x => `
-                <tr class="border-b">
-                    <td class="py-2 truncate max-w-[150px]">${x.name}</td>
-                    <td class="py-2 text-center font-bold text-green-600">${x.score}%</td>
-                    <td class="py-2 text-right"><button onclick="loadHistoric(${x.id})" class="text-blue-600 font-bold">VER</button></td>
-                </tr>
-            `).join('');
-        }
+        // Simulação de Análise
+        window.runAnalysis = () => {
+            const loader = document.getElementById('loader');
+            const results = document.getElementById('results-area');
+            
+            loader.classList.remove('hidden');
+            setTimeout(() => {
+                loader.classList.add('hidden');
+                results.classList.remove('hidden');
+                document.getElementById('final-score').innerText = "85%";
+                document.getElementById('summary').innerText = "O candidato possui excelente fit cultural e técnico, com destaque para a experiência anterior reportada, apesar de estar em ambiente anonimizado.";
+                results.scrollIntoView({ behavior: 'smooth' });
+            }, 2000);
+        };
 
-        window.loadHistoric = (id) => updateResultsUI(history.find(h => h.id === id));
-        window.clearHistory = () => { if(confirm("Limpar?")){ history=[]; localStorage.removeItem(APP_CONFIG.historyKey); location.reload(); } };
-        window.newAnalysis = () => location.reload();
-
-        renderRanking();
-        if(localStorage.getItem(APP_CONFIG.storageKey)) {
-            document.getElementById('custom-api-key').value = localStorage.getItem(APP_CONFIG.storageKey);
-            testApiKey();
-        }
+        document.getElementById('cv-upload').onchange = (e) => {
+            if(e.target.files[0]) {
+                document.getElementById('file-name').innerText = e.target.files[0].name;
+            }
+        };
     </script>
 </body>
 </html>
